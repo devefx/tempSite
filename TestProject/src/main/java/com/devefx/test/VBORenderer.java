@@ -14,14 +14,14 @@ import com.jogamp.opengl.glu.GLU;
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
 
-public class Renderer2 implements GLEventListener {
+public class VBORenderer implements GLEventListener {
 
 	// 由数组meshArray转换成的缓存buffer 
 	protected FloatBuffer meshArraybuffer;
 	// VBO对象集合
 	protected IntBuffer buffersVBO = IntBuffer.allocate(1);
 	
-	IntBuffer index_list;
+	protected IntBuffer index_list;
 	
 	protected int texture;
 	
@@ -29,22 +29,16 @@ public class Renderer2 implements GLEventListener {
 	public void init(GLAutoDrawable drawable) {
 		final GL2 gl = drawable.getGL().getGL2();
 		final GLU glu = new GLU();
-		// 设置背景颜色  
+		/*// 设置背景颜色  
 		gl.glClearColor(0.0f, 0.0f, 0.0f, 1f);
 		// 视点大小
-		gl.glViewport(0, 0, 800, 600);
+		gl.glViewport(0, 0, 100, 100);
 		gl.glMatrixMode(GL2.GL_PROJECTION);
-		gl.glLoadIdentity();
+		gl.glLoadIdentity();*/
 		// 裁剪横坐标（left，right）纵坐标（bottom，top）范围内的视图，放进GL可见视图中
 		//glu.gluOrtho2D(-1.0, 101, -1.0, 101.0);// 使坐标系统出现在GL里，此时屏幕中最左面是坐标0，右面是500，最下0，嘴上500
-		
 		glu.gluOrtho2D(0f, 100f, 100f, 0);
-		
-		final boolean VBOsupported = gl.isFunctionAvailable("glGenBuffersARB") && gl.isFunctionAvailable("glBindBufferARB")  
-                && gl.isFunctionAvailable("glBufferDataARB") && gl.isFunctionAvailable("glDeleteBuffersARB");  
-        System.out.println("Is VBO supported : " + VBOsupported);
-		
-        // 数组，包含了meshArray.length/2对二维坐标
+		// 数组，包含了meshArray.length/2对二维坐标
 		float[] array = {
 				1, 1, 0, 1, 0, 10, 10, 1, 
 				1, 1, 0, 1, 0, 25, 20, 1,
@@ -75,15 +69,7 @@ public class Renderer2 implements GLEventListener {
 		gl.glBufferData(GL2.GL_ARRAY_BUFFER, meshArraybuffer.capacity() * Buffers.SIZEOF_FLOAT,
 				meshArraybuffer, GL2.GL_STATIC_DRAW);
 		
-		try {
-			gl.glEnable(GL2.GL_TEXTURE_2D);
-			Texture texture = TextureIO.newTexture(new File("f:\\1.jpg"), true);
-			this.texture = texture.getTextureObject(gl);
-		} catch (GLException | IOException e) {
-			e.printStackTrace();
-		}
-		
-		
+		// 顶点索引
 		int[] int_array = {
 			0, 1, 2,
 			3, 4, 5,
@@ -94,64 +80,43 @@ public class Renderer2 implements GLEventListener {
 			index_list.put(int_array[i]);
 		}
 		index_list.flip();
+		
+		// 加载纹理
+		try {
+			gl.glEnable(GL2.GL_TEXTURE_2D);
+			Texture texture = TextureIO.newTexture(new File("f:\\1.jpg"), true);
+			this.texture = texture.getTextureObject(gl);
+		} catch (GLException | IOException e) {
+			e.printStackTrace();
+		}
+		
 	}
 
 	@Override
 	public void dispose(GLAutoDrawable drawable) {
-		
 	}
 
 	@Override
 	public void display(GLAutoDrawable drawable) {
 		// 从GLAutoDrawable获取GL
 		final GL2 gl = drawable.getGL().getGL2();
-		
 		// 填充背景颜色
 		gl.glClear(GL2.GL_COLOR_BUFFER_BIT);
-		// 设置GL的画图颜色，也就是画刷的颜色
-		//gl.glColor3f(1.0f, 0.0f, 0.0f);
-		
-		
+		// 绑定纹理
 		gl.glBindTexture(GL2.GL_TEXTURE_2D, texture);
-		
 		// 启用顶点数组
 		gl.glEnableClientState(GL2.GL_VERTEX_ARRAY);  
 		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, buffersVBO.get(0));
 		
-		// 以size(2)个数组元素为一个单位放进缓存buffer
-		//gl.glVertexPointer(2, GL2.GL_FLOAT, 0, 0);
-		// 以mode方式（点、三角形、线）画数组缓存中从第first开始的count个数据元素
-		//gl.glDrawArrays(GL2.GL_TRIANGLES, 0, meshArraybuffer.capacity() / 2);
-
-		//gl.glDrawArrays(GL2.GL_TRIANGLES, 0, meshArraybuffer.capacity() / 6);
+		
 		gl.glDrawElements(GL2.GL_TRIANGLES, meshArraybuffer.capacity() / 8, GL2.GL_UNSIGNED_INT, index_list);
-		
-		// gl.glPointSize(5);  
-        // gl.glDrawArrays(GL.GL_POINTS, 0, meshArray.length / 2 + 2);// 此时 ，实际没有meshArray.length / 2 + 2个，系统自动补出一个点（0,0）  
-  
-        // gl.glDrawArrays(GL.GL_LINES, 0, meshArray.length / 2);// 此时9个点，画了4条曲线，最后一个点没用着  
-        // gl.glDrawArrays(GL.GL_LINES, 0, meshArray.length / 2 + 1);// 此时9个点，画了5条曲线，最后一个点和自动加的（0,0）连线了  
-  
-        // gl.glDrawArrays(GL.GL_QUADS, 5, meshArray.length / 2 + 2);  
-  
-        // *****************************参数说明******Begin**********************************************************************  
-        // glVertexPointer glDrawArrays  
-        // 假设buffer中共18个float数，glVertexPointer(2, GL.GL_FLOAT, 0, 0)后buffer中相当于生成了9(18/2)个元素变量（此处是一对坐标）  
-        // drawArray中，第二个参数是指从刚才生成那9个元素变量中第几个元素变量开始算，第三个参数表示从开始的index算起  
-        // 取出元素索引为index至index+count-1的元素（count个），以（点线三角形）画出来。  
-        // 在此特别注意：  
-        // index和count参数，如果为负数或者out of index 并不报错，如果index后count超出实际buffer中含有元素数，并且  
-        // 正好buffer中最后一个或几个元素凑不够线或三角形或四边形，buffer末尾会补充一个元素（0,0）  
-        // *****************************参数说明*******End***********************************************************************  
-		
-		gl.glDisableClientState(GL2.GL_VERTEX_ARRAY);
 	}
 
 	@Override
 	public void reshape(GLAutoDrawable drawable, int x, int y, int width,
 			int height) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 }

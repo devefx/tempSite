@@ -5,6 +5,7 @@ import java.awt.Insets;
 
 import javax.swing.JFrame;
 
+import com.devefx.test.demo.Triangle;
 import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLCanvas;
@@ -18,7 +19,7 @@ public class OpenGLTest {
 		GLCapabilities capabilities = new GLCapabilities(profile);
 		// The canvas
 		GLCanvas glcanvas = new GLCanvas(capabilities);
-		glcanvas.addGLEventListener(new Renderer2());
+		glcanvas.addGLEventListener(new Triangle());
 		glcanvas.setIgnoreRepaint(true);
 		glcanvas.setBackground(Color.BLACK);
 		glcanvas.setSize(800, 600);
