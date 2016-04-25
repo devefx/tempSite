@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 
 import org.apache.ibatis.session.SqlSession;
 
-import com.devefx.gamedata.io.FileDataInputStream;
+import com.devefx.gamedata.io.BufferReader;
 import com.devefx.gamedata.model.Resource;
 import com.devefx.gamedata.model.ResourceType;
 import com.devefx.gamedata.mybatis.Mybatis;
@@ -28,13 +28,13 @@ public class WDFParser {
 		int space;
 		ResourceType type;
 		
-		public Member(FileDataInputStream input) throws IOException {
+		public Member(BufferReader input) throws IOException {
 			this.id = input.readInt();
 			this.offset = input.readInt();
 			this.length = input.readInt();
 			this.space = input.readInt();
 			input.mark();
-			input.seekg(offset);
+			input.seekg(offset, BufferReader.BEG);
 			this.type = ResourceType.valueOf(assertType(input));
 			input.reset();
 		}
@@ -44,8 +44,9 @@ public class WDFParser {
 		// 5249 4646 ==> WAV
 		// 5053 ==> WAS
 		// 424D ==> BMP
-		public String assertType(FileDataInputStream input) throws IOException {
-			switch (input.readShort()) {
+		public String assertType(BufferReader input) throws IOException {
+			short t = input.readShort();
+			switch (t) {
 			case 0x5053:
 				return "WAS";
 			case 0x4D42:
@@ -59,9 +60,6 @@ public class WDFParser {
 			}
 			return "UNKNOWN";
 		}
-		
-		
-		
 		
 		@Override
 		public String toString() {
@@ -77,8 +75,8 @@ public class WDFParser {
 	public void open(String filename) throws IOException {
 		File file = new File(filename);
 		InputStream is = new FileInputStream(file);
-		FileDataInputStream di = new FileDataInputStream(is);
-		
+		BufferReader di = new BufferReader(is);
+
 		int flag = di.readInt();
 		if (flag == 1464092240) {
 			int number = di.readInt();
@@ -88,7 +86,7 @@ public class WDFParser {
 			
 			List<Resource> resources = new ArrayList<Resource>();
 			
-			di.seekg(offset);
+			di.seekg(offset, BufferReader.BEG);
 			for (int i = 0; i < number; i++) {
 				Member member = new Member(di);
 				members.add(member);
@@ -103,7 +101,7 @@ public class WDFParser {
 				}
 			}
 			
-			SqlSession session = mybatis.getSqlSessionFactory().openSession();
+			/*SqlSession session = mybatis.getSqlSessionFactory().openSession();
 			try {
 				session.insert("insertResourceBatch", resources);
 				session.commit();
@@ -112,7 +110,9 @@ public class WDFParser {
 				session.rollback();
 			} finally {
 				session.close();
-			}
+			}*/
+			
+			System.out.println(1);
 		}
 		
 		di.close();
@@ -120,11 +120,11 @@ public class WDFParser {
 	}
 	
 	public static void main(String[] args) {
-		mybatis.init("mybatis-config.xml");
+		//mybatis.init("mybatis-config.xml");
 		
 		final WDFParser parser = new WDFParser();
 		
-		File dir = new File("F:\\梦幻西游2");
+		File dir = new File("F:\\梦幻西游");
 		if (dir.isDirectory()) {
 			dir.list(new FilenameFilter() {
 				@Override
