@@ -3,6 +3,7 @@
 	<groupId>com.devefx</groupId>
 	<artifactId>GameData</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
+	<name>com.devefx.GameData</name>
 	<dependencies>
 		<dependency>
 			<groupId>commons-io</groupId>
