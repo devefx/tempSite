@@ -120,7 +120,12 @@ public class WDFFile {
 		
 		if (file.open("F:\\梦幻西游\\addon.wdf")) {
 			
-			file.read(0x4F8312F6);
+			byte[] data = file.read(0x37B74A4E);
+			
+			WASFile frame = new WASFile();
+			if (frame.open(data)) {
+				frame.getTGA(0, 1);
+			}
 			
 		}
 	}

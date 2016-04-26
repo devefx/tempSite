@@ -1,4 +1,4 @@
-package com.devefx.gamedata.parser;
+package com.devefx.gamedata.parser.discard;
 
 import java.io.File;
 import java.io.FileInputStream;

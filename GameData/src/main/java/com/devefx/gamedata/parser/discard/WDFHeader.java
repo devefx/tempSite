@@ -1,4 +1,4 @@
-package com.devefx.gamedata.parser;
+package com.devefx.gamedata.parser.discard;
 
 import java.io.DataInput;
 import java.io.IOException;
