@@ -1,4 +1,4 @@
-package com.devefx.gamedata.parser;
+package com.devefx.gamedata.common;
 
 public class TGAUtils {
 	

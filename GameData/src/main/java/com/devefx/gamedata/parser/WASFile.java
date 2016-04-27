@@ -18,6 +18,7 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
 
+import com.devefx.gamedata.common.TGAUtils;
 import com.devefx.gamedata.parser.struct.SequenceFrame;
 import com.devefx.gamedata.parser.struct.WASFrame;
 import com.devefx.gamedata.parser.struct.WASInfo;
