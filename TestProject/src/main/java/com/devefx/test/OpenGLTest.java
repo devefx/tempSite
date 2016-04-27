@@ -6,6 +6,7 @@ import java.awt.Insets;
 import javax.swing.JFrame;
 
 import com.devefx.test.demo.Triangle;
+import com.jogamp.newt.opengl.GLWindow;
 import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLCanvas;
@@ -13,11 +14,29 @@ import com.jogamp.opengl.util.FPSAnimator;
 
 public class OpenGLTest {
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 		// getting the capabilities object of GL2 profile
 		GLProfile profile = GLProfile.get(GLProfile.GL2);
 		GLCapabilities capabilities = new GLCapabilities(profile);
-		// The canvas
+		// The Windows
+		GLWindow window = GLWindow.create(capabilities);
+		window.setSize(800, 600);
+		window.setTitle("OpenGL");
+		window.addGLEventListener(new Renderer());
+		window.setVisible(true);
+		
+		FPSAnimator animator = new FPSAnimator(60);
+		animator.setUpdateFPSFrames(60, System.err);
+		animator.add(window);
+		animator.start();
+		
+		while (animator.isAnimating() && window.isVisible()) {
+			Thread.sleep(100);
+		}
+		animator.stop();
+		window.destroy();
+		
+/*		// The canvas
 		GLCanvas glcanvas = new GLCanvas(capabilities);
 		glcanvas.addGLEventListener(new Triangle());
 		glcanvas.setIgnoreRepaint(true);
@@ -39,7 +58,7 @@ public class OpenGLTest {
 		frame.setVisible(true);
 		// create animator
 		FPSAnimator animator = new FPSAnimator(glcanvas, 300, true);
-		animator.start();
+		animator.start();*/
 	}
 	
 }
