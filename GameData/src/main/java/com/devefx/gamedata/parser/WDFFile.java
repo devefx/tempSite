@@ -116,7 +116,14 @@ public class WDFFile {
 	
 	
 	public static void main(String[] args) throws IOException {
-		WDFFile file = new WDFFile();
+		int a = 99952550;
+		
+		System.out.println((a >> 24) & 0xff);
+		System.out.println((a >> 16) & 0xff);
+		System.out.println((a >> 8) & 0xff);
+		System.out.println(a & 0xff);
+		
+		/*WDFFile file = new WDFFile();
 		
 		if (file.open("F:\\梦幻西游\\addon.wdf")) {
 			
@@ -127,6 +134,6 @@ public class WDFFile {
 				frame.getTGA(0, 1);
 			}
 			
-		}
+		}*/
 	}
 }

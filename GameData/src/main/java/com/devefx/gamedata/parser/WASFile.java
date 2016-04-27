@@ -4,7 +4,9 @@ import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -16,26 +18,15 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
 
-public class WASFile {
+import com.devefx.gamedata.parser.struct.SequenceFrame;
+import com.devefx.gamedata.parser.struct.WASFrame;
+import com.devefx.gamedata.parser.struct.WASInfo;
+
+public class WASFile extends WASInfo {
 	
 	private RandomAccessFile file;
 	private FileChannel channel;
 	private ByteBuffer buffer;
-	
-	private short	flag;
-	private short 	headerSize;
-	private short 	group;
-	private short 	frame;
-	private short 	width;
-	private short 	height;
-	private short	centerX;
-	private short	centerY;
-	private short[] palette;
-	private int[][] offset;
-	
-	public WASFile() {
-		palette = new short[256];
-	}
 	
 	public boolean open(String filename) throws IOException {
 		try {
@@ -57,71 +48,185 @@ public class WASFile {
 		return process();
 	}
 	
-	public int[][] getTGA(int group, int frame) {
-		if (flag == 0x5053) {
-			int pos = offset[group][frame] + headerSize + 4;
-			buffer.position(pos);
-			
-			int centerX = readSwappedInt();
-			int centerY = readSwappedInt();
-			int width = readSwappedInt();
-			int height = readSwappedInt();
-			int[] lineOffset = new int[height];
-			for (int i = 0; i < height; i++) {
-				lineOffset[i] = readSwappedInt();
-			}
-			
-			int[][] pixels = new int[height][width];
-			int repeat;
-			for (int y = 0; y < height; y++) {
-				int x = 0;
-				buffer.position(pos + lineOffset[y]);
-				while (x < width) {
-					byte b = buffer.get();
-					switch (b & 0xC0) {
-					case 0:
-						if ((b & 0x20) > 0) {
-							int c = palette[buffer.get() & 0xff];
-							pixels[y][x++] = (c + ((b & 0x1F) << 16));
-						} else if (b != 0) {
-							repeat = b & 0x1F;
-							b = buffer.get();
-							int c = palette[buffer.get() & 0xff];
-							for (int i = 0; i < repeat; i++) {
-								pixels[y][x++] = (c + ((b & 0x1F) << 16));
-							}
-						} else {
-							if (x > width) {
-								continue;
-							} else if (x != 0) {
-								x = width;
-							}
-						}
-						break;
-					case 64:
-						repeat = b & 0x3F;
+	public WASFrame get(int group, int frame) {
+		int position = this.offset[group][frame] + this.headerLen + 4;
+		buffer.position(position);
+		
+		WASFrame wasFrame = new WASFrame();
+		wasFrame.centerX = readSwappedInt();
+		wasFrame.centerY = readSwappedInt();
+		wasFrame.width = readSwappedInt();
+		wasFrame.height = readSwappedInt();
+		
+		int[] lineOffset = new int[wasFrame.height];
+		for (int i = 0; i < wasFrame.height; i++) {
+			lineOffset[i] = readSwappedInt();
+		}
+		
+		wasFrame.pixels = new int[wasFrame.height][wasFrame.width];
+		int repeat;
+		for (int y = 0; y < wasFrame.height; y++) {
+			int x = 0;
+			buffer.position(position + lineOffset[y]);
+			while (x < wasFrame.width) {
+				byte b = buffer.get();
+				switch (b & 0xC0) {
+				case 0:
+					if ((b & 0x20) > 0) {
+						int alpha = b & 0x1F;
+						int c = this.palette[buffer.get() & 0xff];
+						//wasFrame.pixels[y][x++] = (c + (alpha << 16));
+						wasFrame.pixels[y][x++] = RGB565to888(Alpha565(c, alpha), alpha * 8);
+					} else if (b != 0) {
+						repeat = b & 0x1F;
+						int alpha = buffer.get() & 0x1F;
+						int c = this.palette[buffer.get() & 0xff];
 						for (int i = 0; i < repeat; i++) {
-							int n = buffer.get() & 0xff;
-							pixels[y][x++] = palette[n] + 2031616;
+							//wasFrame.pixels[y][x++] = (c + (alpha << 16));
+							wasFrame.pixels[y][x++] = RGB565to888(Alpha565(c, alpha), alpha * 8);
 						}
-						break;
-					case 128:
-						repeat = b & 0x3F;
+					} else {
+						if (x > wasFrame.width) {
+							continue;
+						} else if (x != 0) {
+							x = wasFrame.width;
+						}
+					}
+					break;
+				case 64:
+					repeat = b & 0x3F;
+					for (int i = 0; i < repeat; i++) {
 						int index = buffer.get() & 0xff;
-						for (int i = 0; i < repeat; i++) {
-							pixels[y][x++] = palette[index] + 2031616;
-						}
-						break;
-					case 192:
-						x += (b & 0x3F);
-						break;
+						//wasFrame.pixels[y][x++] = this.palette[index] + 0x1F0000;
+						wasFrame.pixels[y][x++] = RGB565to888(this.palette[index], 0xff);
+					}
+					break;
+				case 128:
+					repeat = b & 0x3F;
+					int index = buffer.get() & 0xff;
+					for (int i = 0; i < repeat; i++) {
+						//wasFrame.pixels[y][x++] = this.palette[index] + 0x1F0000;
+						wasFrame.pixels[y][x++] = RGB565to888(this.palette[index], 0xff);
+					}
+					break;
+				case 192:
+					x += (b & 0x3F);
+					break;
+				}
+			}
+		}
+	//	output(String.format("F:\\%s-%s.png", group, frame), wasFrame.pixels, this.centerX - wasFrame.centerX,
+	//			this.centerY - wasFrame.centerY, wasFrame.width, wasFrame.height);
+		return wasFrame;
+	}
+	
+	public SequenceFrame getSequenceFrame() {
+		int maxWidth = 0;
+		int maxHeight = 0;
+		WASFrame[][] frames = new WASFrame[group][frame];
+		for (int i = 0; i < group; i++) {
+			for (int j = 0; j < frame; j++) {
+				WASFrame frame = get(i, j);
+				if (frame.width > maxWidth) {
+					maxWidth = frame.width;
+				}
+				if (frame.height > maxHeight) {
+					maxHeight = frame.height;
+				}
+				frames[i][j] = frame;
+			}
+		}
+		SequenceFrame sequenceFrame = new SequenceFrame(maxWidth, maxHeight, group, frame);
+		for (int i = 0; i < group; i++) {
+			for (int j = 0; j < frame; j++) {
+				WASFrame was = frames[i][j];
+				sequenceFrame.centerX[i][j] = this.centerX - was.centerX;
+				sequenceFrame.centerY[i][j] = this.centerY - was.centerY;
+				for (int y = 0; y < was.height; y++) {
+					for (int x = 0; x < was.width; x++) {
+						int top = (was.height - y - 1) + (group - i - 1) * maxHeight;
+						sequenceFrame.pixels[top][x + j * maxWidth] = was.pixels[y][x];
 					}
 				}
 			}
-			output("F:\\0.png", pixels, this.centerX - centerX, this.centerY - centerY, width, height);
-			return pixels;
 		}
-		return null;
+		return sequenceFrame;
+	}
+	
+	
+	public static int Alpha565(int src, int alpha) {
+		
+		int r = (src & 0xF800) >> 11;
+		int g = (src & 0x07E0) >> 5;
+		int b = (src & 0x001F) >> 0;
+		
+		r = (r * alpha) >> 5;
+		g = (g * alpha) >> 5;
+		b = (b * alpha) >> 5;
+		
+		return r << 11 | g << 5 | b;
+	}
+	
+	public static int RGB565to888(int color, int alpha) {
+		
+		int r = (color >> 11) & 0x1f;
+		int g = (color >>  5) & 0x3f;
+		int b = (color      ) & 0x1f;
+		
+		r = (r << 3) | (r >> 2);
+		g = (g << 2) | (g >> 4);
+		b = (b << 3) | (b >> 2);
+		
+		return ((alpha & 0xff) << 24) + ((r & 0xff) << 16) + ((g & 0xff) << 8) + ((b & 0xff) << 0);
+	}
+	
+	public void close() throws IOException {
+		channel.close();
+		file.close();
+	}
+	
+	int readSwappedInt() {
+		return (buffer.get() & 0xFF) + ((buffer.get() & 0xFF) << 8) 
+				+ ((buffer.get() & 0xFF) << 16) + ((buffer.get() & 0xFF) << 24);
+	}
+	
+	int readSwappedUnsignedInt() {
+		int low = (buffer.get() & 0xFF) + ((buffer.get() & 0xFF) << 8) 
+				+ ((buffer.get() & 0xFF) << 16);
+		return ((buffer.get() & 0xFF) << 24) + (low & 0xFFFFFFFF);
+	}
+	
+	short readSwappedShort() {
+		return (short) ((buffer.get() & 0xFF) + ((buffer.get() & 0xFF) << 8));
+	}
+	
+	boolean process() throws IOException {
+		this.flag = readSwappedShort();
+		this.headerLen = readSwappedShort();
+		if (this.flag != 0x5053 || this.headerLen < 12) {
+			close();
+			return false;
+		}
+		this.group = readSwappedShort();
+		this.frame = readSwappedShort();
+		this.width = readSwappedShort();
+		this.height = readSwappedShort();
+		this.centerX = readSwappedShort();
+		this.centerY = readSwappedShort();
+		if (this.headerLen > 12) {
+			byte[] delayLine = new byte[this.headerLen - 12];
+			buffer.get(delayLine);
+		}
+		for (int i = 0; i < 256; i++) {
+			this.palette[i] = readSwappedShort();
+		}
+		this.offset = new int[this.group][this.frame];
+		for (int i = 0; i < this.group; i++) {
+			for (int j = 0; j < this.frame; j++) {
+				this.offset[i][j] = readSwappedInt();
+			}
+		}
+		return true;
 	}
 	
 	public void output(String filename, int[][] pixels, int x, int y, int frameWidth, int frameHeight) {
@@ -150,10 +255,15 @@ public class WASFile {
 								break;
 							}
 							if (pixels[y1][x1] >>> 16 != 0) {
-								color[0] = (100 * (pixels[y1][x1] >>> 11 & 0x1F) / 31 * 255 / 100);
+								/*color[0] = (100 * (pixels[y1][x1] >>> 11 & 0x1F) / 31 * 255 / 100);
 								color[1] = (100 * (pixels[y1][x1] >> 5 & 0x3F) / 63 * 255 / 100);
 								color[2] = (100 * (pixels[y1][x1] & 0x1F) / 31 * 255 / 100);
-								color[3] = (100 * (pixels[y1][x1] >>> 16 & 0x1F) / 31 * 255 / 100);
+								color[3] = (100 * (pixels[y1][x1] >>> 16 & 0x1F) / 31 * 255 / 100);*/
+								int c = pixels[y1][x1];
+								color[0] = c >> 16;
+								color[1] = c >> 8;
+								color[2] = c >> 0;
+								color[3] = c >> 24;
 							} else {
 								color[3] = 0;
 							}
@@ -176,64 +286,18 @@ public class WASFile {
 		}
 	}
 	
-	public void close() throws IOException {
-		channel.close();
-		file.close();
-	}
-	
-	int readSwappedInt() {
-		return (buffer.get() & 0xFF) + ((buffer.get() & 0xFF) << 8) 
-				+ ((buffer.get() & 0xFF) << 16) + ((buffer.get() & 0xFF) << 24);
-	}
-	
-	int readSwappedUnsignedInt() {
-		int low = (buffer.get() & 0xFF) + ((buffer.get() & 0xFF) << 8) 
-				+ ((buffer.get() & 0xFF) << 16);
-		return ((buffer.get() & 0xFF) << 24) + (low & 0xFFFFFFFF);
-	}
-	
-	short readSwappedShort() {
-		return (short) ((buffer.get() & 0xFF) + ((buffer.get() & 0xFF) << 8));
-	}
-	
-	boolean process() throws IOException {
-		flag = readSwappedShort();
-		headerSize = readSwappedShort();
-		if (flag != 0x5053 || headerSize < 12) {
-			close();
-			return false;
-		}
-		group = readSwappedShort();
-		frame = readSwappedShort();
-		width = readSwappedShort();
-		height = readSwappedShort();
-		centerX = readSwappedShort();
-		centerY = readSwappedShort();
-		
-		if (headerSize > 12) {
-			byte[] delayLine = new byte[headerSize - 12];
-			buffer.get(delayLine);
-		}
-		buffer.position(headerSize + 4);
-		for (int i = 0; i < 256; i++) {
-			palette[i] = readSwappedShort();
-		}
-		
-		buffer.position(headerSize + 4 + 512);
-		offset = new int[group][frame];
-		for (int i = 0; i < group; i++) {
-			for (int j = 0; j < frame; j++) {
-				offset[i][j] = readSwappedInt();
-			}
-		}
-		return true;
-	}
-	
 	public static void main(String[] args) throws IOException {
 
 		WASFile file = new WASFile();
-		if (file.open("F:\\005944E2.was")) {
-			file.getTGA(0, 0);
+		if (file.open("F:\\t.was")) {
+			
+			SequenceFrame frame = file.getSequenceFrame();
+			byte[] b = TGAUtils.toTGA(frame.pixels, frame.width * frame.frame, frame.height * frame.group);
+			
+			OutputStream out = new FileOutputStream("f:\\005944E2_1.tga");
+			out.write(b);
+			out.flush();
+			out.close();
 		}
 		
 	}
