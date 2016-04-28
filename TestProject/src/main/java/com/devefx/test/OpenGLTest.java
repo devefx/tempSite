@@ -5,6 +5,9 @@ import java.awt.Insets;
 
 import javax.swing.JFrame;
 
+import com.devefx.test.demo.BasicFrame;
+import com.devefx.test.demo.CubeObject;
+import com.devefx.test.demo.GLRenderer;
 import com.devefx.test.demo.Triangle;
 import com.jogamp.newt.opengl.GLWindow;
 import com.jogamp.opengl.GLCapabilities;
@@ -22,8 +25,10 @@ public class OpenGLTest {
 		GLWindow window = GLWindow.create(capabilities);
 		window.setSize(800, 600);
 		window.setTitle("OpenGL");
-		window.addGLEventListener(new Renderer());
+		window.addGLEventListener(new GLRenderer());
 		window.setVisible(true);
+		
+		
 		
 		FPSAnimator animator = new FPSAnimator(60);
 		animator.setUpdateFPSFrames(60, System.err);
