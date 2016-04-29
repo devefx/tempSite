@@ -33,7 +33,7 @@ public class GLRenderer2 implements GLEventListener {
 	private ByteBuffer texCoords;
 	private ByteBuffer vertices;
 	
-	private ShortBuffer indexList;
+	private ShortBuffer indexList; 
 	
 	private int texture;
 	

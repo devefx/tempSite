@@ -1,15 +1,21 @@
 package com.devefx.test.demo;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 
+import com.devefx.gamedata.common.TGAUtils;
+import com.devefx.gamedata.parser.WASFile;
+import com.devefx.gamedata.parser.struct.SequenceFrame;
 import com.devefx.test.demo.buffer.Vertex;
 import com.devefx.test.demo.buffer.VertexBuffer;
 import com.jogamp.common.nio.Buffers;
+import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLEventListener;
@@ -19,6 +25,15 @@ import com.jogamp.opengl.util.texture.TextureIO;
 
 public class GLRenderer implements GLEventListener {
 
+	protected IntBuffer buffersVBO = IntBuffer.allocate(1);
+	
+	protected ByteBuffer meshArraybuffer;
+	
+	
+	
+	
+	
+	
 	public static VertexBuffer buffer;
 	
 	private static int WIDTH = 800;
@@ -64,85 +79,109 @@ public class GLRenderer implements GLEventListener {
 		
 		
 		
+		//loadTexture("F:\\t.was", gl, 0, 0, true);
 		
-		
-		loadTexture("f:\\1.jpg", gl, 1024, 1024);
+		loadTexture("f:\\1.jpg", gl, 200, 400, false);
 		
 
 	}
 	
-	public void loadTexture(String filename, GL2 gl, int width, int height) {
-		
-		//GL2.GL_T2F_C3F_V3F
+	public void loadTexture(String filename, GL2 gl, int width, int height, boolean isWas) {
+		WASFile was = new WASFile();
 		try {
-			Texture tex = TextureIO.newTexture(new File(filename), true);
-			if (tex != null) {
-				this.texture = tex.getTextureObject(gl);
-				float tx = 0;
-				float ty = 0;
+			if (was.open(filename) || isWas == false) {
 				
-				float x = 100;
-				float y = 100;
-				float z = 100;
+				Texture tex = null;
+				if (isWas) {
+					SequenceFrame frame = was.getSequenceFrame();
+					byte[] buf = TGAUtils.toTGA(frame.pixels, frame.width * frame.frame, frame.height * frame.group);
+					InputStream is = new ByteArrayInputStream(buf);
+					tex = TextureIO.newTexture(is, true, TextureIO.TGA);
+					width = frame.width;
+					height = frame.height;
+				} else {
+					tex = TextureIO.newTexture(new File(filename), true);
+				}
 				
-				float w = tex.getWidth();
-				float h = tex.getHeight();
-				
-				
-				int[] i_colors = new int[] {
-					0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
-				};
-				
-				float[] f_texCoords = new float[] {
-					tx / w, ty / h,
-					(tx + width) / w, ty / h,
-					(tx + width) / w, (ty + height) / h,
-					tx / w, (ty + height) / h
-				};
-				
-				float[] f_vertices = new float[] {
-					x, y, z,
-					x + height, y, z,
-					x + height, y + height, z,
-					x, y + height, z
-				};
-				
-				float[] f_normals = new float[] {
-					0.0f, 0.0f, 0.0f,
-					0.0f, 0.0f, 0.0f,
-					0.0f, 0.0f, 0.0f,
-					0.0f, 0.0f, 0.0f,
-				};
-				
-				short[] s_index = new short[] {
-					(short) 0, (short) 1, (short) 2, (short) 3
-				};
-				
-				// color
-				colors = Buffers.newDirectIntBuffer(i_colors);
-				colors.rewind();
-				
-				// tx ty
-				texCoords = Buffers.newDirectFloatBuffer(f_texCoords);
-				texCoords.rewind();
-				
-				// x y z
-				vertices = Buffers.newDirectFloatBuffer(f_vertices);
-				vertices.rewind();
+				if (tex != null) {
+					this.texture = tex.getTextureObject(gl);
+					float tx = 0;
+					float ty = 0;
+					
+					float x = 100;
+					float y = 100;
+					float z = 100;
+					
+					float w = tex.getWidth();
+					float h = tex.getHeight();
+					
+					
+					int[] i_colors = new int[] {
+						0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
+					};
+					
+					float p = (h - height) / h;
+					float[] f_texCoords = new float[] {
+							tx / w, ty / h + p,
+							(tx + width) / w, ty / h + p,
+							(tx + width) / w, (ty + height) / h + p,
+							tx / w, (ty + height) / h + p
+					};
+					
+					float[] f_vertices = new float[] {
+						x, y, z,
+						x + width, y, z,
+						x + width, y + height, z,
+						x, y + height, z
+					};
 
-				// nx ny nz
-				normals = Buffers.newDirectFloatBuffer(f_normals);
-				normals.rewind();
-				
-				// index
-				indexList = Buffers.newDirectShortBuffer(s_index);
-				indexList.rewind();
-				
-				primitiveCount ++;
+					float[] f_normals = new float[] {
+						0.0f, 0.0f, 0.0f,
+						0.0f, 0.0f, 0.0f,
+						0.0f, 0.0f, 0.0f,
+						0.0f, 0.0f, 0.0f,
+					};
+					
+					short[] s_index = new short[] {
+						(short) 2, (short) 1, (short) 0, (short) 0,
+						//(short) 0, (short) 1, (short) 2, (short) 3,
+					};
+					
+					// color
+					colors = Buffers.newDirectIntBuffer(i_colors);
+					colors.rewind();
+					
+					// tx ty
+					texCoords = Buffers.newDirectFloatBuffer(f_texCoords);
+					texCoords.rewind();
+					
+					// x y z
+					vertices = Buffers.newDirectFloatBuffer(f_vertices);
+					vertices.rewind();
+
+					// nx ny nz
+					normals = Buffers.newDirectFloatBuffer(f_normals);
+					normals.rewind();
+					
+					// index
+					indexList = Buffers.newDirectShortBuffer(s_index);
+					indexList.rewind();
+					
+					primitiveCount ++;
+				}
 			}
-		} catch (Exception e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		
+		// GL2.GL_T2F_C3F_V3F
+/*		try {
+			Texture tex = TextureIO.newTexture(new File(filename), true);
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}*/
 	}
 	
 	@Override
@@ -156,7 +195,7 @@ public class GLRenderer implements GLEventListener {
 		// benScene
 		gl.glMatrixMode(GL2.GL_PROJECTION);
 		gl.glLoadIdentity();
-		gl.glOrtho(0, WIDTH, HEIGHT, 0, -5000.0f, 5000.0f);
+		gl.glOrtho(0, WIDTH, 0, HEIGHT, -5000.0f, 5000.0f);
 		gl.glMatrixMode(GL2.GL_MODELVIEW);
 		gl.glLoadIdentity();
 		gl.glScalef(scale, scale, 1.0f);
@@ -191,13 +230,14 @@ public class GLRenderer implements GLEventListener {
 			
 			gl.glDrawElements(GL2.GL_QUADS, primitiveCount * 4, GL2.GL_UNSIGNED_SHORT, indexList);
 			
+			//gl.glDrawElements(GL2.GL_TRIANGLES, primitiveCount * 2 * 3, GL2.GL_UNSIGNED_SHORT, indexList);
+			
 			
 			gl.glDisableClientState(GL2.GL_COLOR_ARRAY);
 			gl.glDisableClientState(GL2.GL_VERTEX_ARRAY);
 			gl.glDisableClientState(GL2.GL_NORMAL_ARRAY);
 			gl.glDisableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 		}
-
 		
 		// endScene
 		gl.glFlush();
