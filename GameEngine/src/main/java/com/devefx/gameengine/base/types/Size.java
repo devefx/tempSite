@@ -9,6 +9,10 @@ public class Size {
 	}
 	
 	public Size(float width, float height) {
+		setSize(width, height);
+	}
+	
+	public void setSize(float width, float height) {
 		this.width = width;
 		this.height = height;
 	}

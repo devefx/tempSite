@@ -2,6 +2,7 @@ package com.devefx.test.demo;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
@@ -181,7 +182,6 @@ public class GLRenderer2 implements GLEventListener {
 			
 			//gl.glEnableClientState(GL2.GL_NORMAL_ARRAY);
 			
-
 			//gl.glColorPointer(4, GL2.GL_UNSIGNED_BYTE, 0, colors);	// col
 			//gl.glNormalPointer(GL2.GL_FLOAT, 0, normals);			// nx, ny
 			gl.glTexCoordPointer(2, GL2.GL_FLOAT, 0, texCoords);	// tx, ty

@@ -1,20 +1,21 @@
 package com.devefx.gameengine.platform.desktop;
 
-import java.awt.Color;
 import java.awt.Insets;
 
 import javax.swing.JFrame;
 
+import com.devefx.gameengine.base.Director;
 import com.devefx.gameengine.base.types.Rect;
 import com.devefx.gameengine.platform.GLView;
-import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLCapabilities;
-import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLCanvas;
+import com.jogamp.opengl.util.FPSAnimator;
 
 public class GLViewImpl extends GLView {
 
+	private FPSAnimator animator;
+	
 	public static GLViewImpl create(String viewName, Rect rect) {
 		GLViewImpl glViewImpl = new GLViewImpl();
 		if (glViewImpl.initWithRect(viewName, rect)) {
@@ -26,37 +27,19 @@ public class GLViewImpl extends GLView {
 	protected boolean initWithRect(String viewName, Rect rect) {
 		// set the view name
 		setViewName(viewName);
-		
+		setFrameSize(rect.size.width, rect.size.height);
 		
 		// getting the capabilities object of GL2 profile
 		GLProfile profile = GLProfile.get(GLProfile.GL2);
 		GLCapabilities capabilities = new GLCapabilities(profile);
 		// The canvas
 		GLCanvas glcanvas = new GLCanvas(capabilities);
-		glcanvas.setSize((int) rect.size.width, (int) rect.size.height);
+		glcanvas.addGLEventListener(Director.getInstance().glEventListener);
 		glcanvas.setIgnoreRepaint(true);
-		glcanvas.setBackground(Color.RED);
-		glcanvas.addGLEventListener(new GLEventListener() {
-			@Override
-			public void reshape(GLAutoDrawable drawable, int x, int y, int width,
-					int height) {
-				
-			}
-			@Override
-			public void init(GLAutoDrawable drawable) {
-				System.out.println(1);
-			}
-			@Override
-			public void dispose(GLAutoDrawable drawable) {
-				
-			}
-			@Override
-			public void display(GLAutoDrawable drawable) {
-				drawable.getGL().getGL2().glClearColor(0, 0, 0, 0);
-			}
-		});
-		// create frame
-		JFrame frame = new JFrame(viewName);
+		glcanvas.setSize((int) rect.size.width, (int) rect.size.height);
+		// creating frame
+		final JFrame frame = new JFrame(viewName);
+		// adding canvas to frame
 		frame.getContentPane().add(glcanvas);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setResizable(false);
@@ -68,8 +51,17 @@ public class GLViewImpl extends GLView {
 		frame.setSize(width, height);
 		frame.setLocationRelativeTo(null);
 		frame.setVisible(true);
+		// create animator
+		animator = new FPSAnimator(glcanvas, 60, true);
+		animator.start();
 		
-		
+	/*	try {
+			while (animator.isAnimating() && frame.isVisible()) {
+				Thread.sleep(1);	
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}*/
 		return true;
 	}
 }

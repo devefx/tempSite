@@ -40,6 +40,10 @@ public class RenderQueue {
 		});
 	}
 	
+	public int size() {
+		return commands.size();
+	}
+	
 	public void clear() {
 		commands.clear();
 	}
@@ -53,16 +57,14 @@ public class RenderQueue {
 	}
 	
 	public void saveRenderState() {
-		GL gl = GLContext.getCurrentGL().getGL2();
-		
+		final GL gl = GLContext.getCurrentGL().getGL2();
 		isCullEnabled = gl.glIsEnabled(GL.GL_CULL_FACE);
 		isDepthEnabled = gl.glIsEnabled(GL.GL_DEPTH_TEST);
 		gl.glGetBooleanv(GL.GL_DEPTH_WRITEMASK, isDepthWrite, 0);
 	}
 	
 	public void restoreRenderState() {
-		GL gl = GLContext.getCurrentGL().getGL2();
-		
+		final GL gl = GLContext.getCurrentGL().getGL2();
 		if (isCullEnabled) {
 			gl.glEnable(GL.GL_CULL_FACE);
 		} else {

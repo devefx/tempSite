@@ -28,6 +28,10 @@ public class QuadCommand extends RenderCommand {
 		return quads;
 	}
 	
+	public int getQuadCount() {
+		return 1;
+	}
+	
 	public BlendFunc getBlendType() {
 		return blendType;
 	}

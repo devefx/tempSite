@@ -1,5 +1,7 @@
 package com.devefx.gameengine.base.types;
 
+import java.nio.Buffer;
+
 public class V3F_C4B_T2F_Quad {
 	/**
 	 * bottom left
@@ -17,4 +19,9 @@ public class V3F_C4B_T2F_Quad {
 	 * top right
 	 */
 	public V3F_C4B_T2F tr = new V3F_C4B_T2F();
+	
+	public Buffer getVerticesBuffer() {
+		
+		return null;
+	}
 }
