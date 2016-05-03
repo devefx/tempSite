@@ -1,6 +1,10 @@
 package com.devefx.gameengine.base.types;
 
-public class Rect {
+import java.nio.Buffer;
+
+import com.devefx.gameengine.memory.Struct;
+
+public class Rect extends Struct {
 	
 	public Vec2 origin = new Vec2();
 	public Size size = new Size();
@@ -45,5 +49,11 @@ public class Rect {
 	public boolean intersectsRect(Rect rect) {
 		return (getMaxX() < rect.getMinX() || getMinX() > rect.getMaxX() ||
 				getMaxY() < rect.getMinY() || getMinY() > rect.getMaxY());
+	}
+	
+	@Override
+	public void write(Buffer buffer) {
+		origin.write(buffer);
+		size.write(buffer);
 	}
 }

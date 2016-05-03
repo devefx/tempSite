@@ -1,72 +1,60 @@
 package com.devefx.gameengine.memory;
 
 import java.lang.reflect.Field;
-import java.nio.ByteBuffer;
+import java.lang.reflect.Type;
+import java.nio.Buffer;
 
 import sun.misc.Unsafe;
 
 @SuppressWarnings({ "restriction" })
-public abstract class Memory {
+public final class Memory {
 
-	public void write(ByteBuffer buffer, long length, long offset) {
-		Unsafe unsafe = UnsafeMemory.getUnsafe();
-		for (long i = 0; i < length; i++) {
-			buffer.put(unsafe.getByte(this, offset + i));
+	private static final long BUFFER_ADDRESS_OFFSET = 16;
+	
+	private static final long ARRAY_OFFSET = 16;
+	
+	private static Unsafe unsafe;
+	
+	public static void copy(Object srcObject, long srcOffset, Buffer destObject, long destOffset, long count) {
+		Unsafe unsafe = getUnsafe();
+		if (destObject.isDirect()) { // is direct buffers
+			long address = unsafe.getLong(destObject, BUFFER_ADDRESS_OFFSET);
+			unsafe.copyMemory(srcObject, srcOffset, null, address + destOffset, count);
+		} else if (destObject.hasArray()) { // is heap buffers
+			unsafe.copyMemory(srcObject, srcOffset, destObject.array(), ARRAY_OFFSET + destOffset, count);
 		}
 	}
 	
-	public void copyMemory(ByteBuffer buffer) throws IllegalArgumentException, IllegalAccessException {
-		System.out.println("b:");
-		copyMemory(buffer, this);
+	public static int ix(Buffer buffer) {
+		if (buffer.isDirect()) {
+			return buffer.position();
+		} else if (buffer.hasArray()) {
+			return buffer.position() + buffer.arrayOffset();
+		}
+		return 0;
 	}
 	
-	void copyMemory(ByteBuffer buffer, Object object) throws IllegalArgumentException, IllegalAccessException {
-		if (object == null) {
-			return;
-		}
-		Unsafe unsafe = UnsafeMemory.getUnsafe();
-		for (Field field : object.getClass().getDeclaredFields()) {
-			Class<?> type = field.getType();
-			long fieldOffset = unsafe.objectFieldOffset(field);
-			if (type.isPrimitive()) {
-				copyMemory(buffer, object, UnsafeMemory.primitiveSize(type), fieldOffset);
-			} else {
-				if (!field.isAccessible()) {
-					field.setAccessible(true);
-				}
-				if (UnsafeMemory.isPrimitiveArray(type)) {
-					Object obj = field.get(object);
-					if (obj != null) {
-						int offset = unsafe.arrayBaseOffset(type);
-						int sizeof = unsafe.arrayIndexScale(type);
-						int size = unsafe.getInt(obj, offset - 4L);
-						copyMemory(buffer, obj, size * sizeof, offset);
-					}
-				} else {
-					copyMemory(buffer, field.get(object));
-				}
+	public static Unsafe getUnsafe() {
+		try {
+			if (unsafe == null) {
+				Field field = Unsafe.class.getDeclaredField("theUnsafe");
+				field.setAccessible(true);
+				unsafe = (Unsafe) field.get(null);
 			}
-			System.out.println();
-			/*if (UnsafeMemory.isPrimitiveArray(type)) {
-				int offset = unsafe.arrayBaseOffset(type);
-				int sizeof = unsafe.arrayIndexScale(type);
-				int size = unsafe.getInt(this, fieldOffset + offset + unsafe.addressSize());
-				copyMemory(buffer, this, size * sizeof, fieldOffset + offset + unsafe.addressSize() + 4);
-			} else {
-				if (!field.isAccessible()) {
-					field.setAccessible(true);
-				}
-				copyMemory(buffer, field.get(object));
-			}*/
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
+		return unsafe;
 	}
 	
-	void copyMemory(ByteBuffer buffer, Object object, long length, long offset) {
-		Unsafe unsafe = UnsafeMemory.getUnsafe();
-		for (long i = 0; i < length; i++) {
-			buffer.put(unsafe.getByte(object, offset + i));
-			System.out.print(unsafe.getByte(object, offset + i) + " ");
-		}
+	static int primitiveSize(Type t) {
+		return t == byte.class ? 1 : (t == short.class || t == char.class) ? 2 : 
+			(t == int.class || t == float.class) ? 4 : (t == long.class || t == double.class) ? 8 :
+				unsafe.addressSize();
 	}
 	
+	static boolean isPrimitiveArray(Type t) {
+		return t == byte[].class || t == short[].class || t == char[].class || t == int[].class
+				|| t == float[].class || t == long[].class || t == double[].class;
+	}
 }

@@ -1,6 +1,8 @@
 package com.devefx.gameengine.base.types;
 
-public class Size {
+import com.devefx.gameengine.memory.Struct;
+
+public class Size extends Struct {
 	
 	public float width;
 	public float height;

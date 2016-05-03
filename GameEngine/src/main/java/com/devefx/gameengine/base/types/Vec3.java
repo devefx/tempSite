@@ -1,8 +1,8 @@
 package com.devefx.gameengine.base.types;
 
-import com.devefx.gameengine.memory.Memory;
+import com.devefx.gameengine.memory.Struct;
 
-public class Vec3 extends Memory {
+public class Vec3 extends Struct {
 	
 	public float x;
 	public float y;

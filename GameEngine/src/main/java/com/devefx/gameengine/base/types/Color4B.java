@@ -1,6 +1,8 @@
 package com.devefx.gameengine.base.types;
 
-public class Color4B {
+import com.devefx.gameengine.memory.Struct;
+
+public class Color4B extends Struct {
 	
 	public byte r;
 	public byte g;

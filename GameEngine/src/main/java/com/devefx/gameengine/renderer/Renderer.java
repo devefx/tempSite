@@ -279,12 +279,13 @@ public class Renderer {
 			gl.glBufferData(GL2.GL_ARRAY_BUFFER, Types.SIZEOF_V3F_C4B_T2F * batchQuadCommands.size() * 4, null, GL2.GL_DYNAMIC_DRAW);
 			// TODO memcpy quadVerts
 			ByteBuffer buffer = gl.glMapBuffer(GL2.GL_ARRAY_BUFFER, GL2.GL_WRITE_ONLY);
+			
 			for (int i = 0, n = Types.SIZEOF_V3F_C4B_T2F * numberQuads * 4; i < n; i++) {
 			}
 			gl.glUnmapBuffer(GL2.GL_ARRAY_BUFFER);
 			
 			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);
-			gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, quadbuffersVBO.get(0));
+			gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, quadbuffersVBO.get(1));
 		} else {
 			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, quadbuffersVBO.get(0));
 			

@@ -2,7 +2,9 @@ package com.devefx.gameengine.base.types;
 
 import java.nio.Buffer;
 
-public class V3F_C4B_T2F_Quad {
+import com.devefx.gameengine.memory.Struct;
+
+public class V3F_C4B_T2F_Quad extends Struct {
 	/**
 	 * bottom left
 	 */
@@ -20,8 +22,11 @@ public class V3F_C4B_T2F_Quad {
 	 */
 	public V3F_C4B_T2F tr = new V3F_C4B_T2F();
 	
-	public Buffer getVerticesBuffer() {
-		
-		return null;
+	@Override
+	public void write(Buffer buffer) {
+		bl.write(buffer);
+		br.write(buffer);
+		tl.write(buffer);
+		tr.write(buffer);
 	}
 }
