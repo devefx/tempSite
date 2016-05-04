@@ -1,5 +1,8 @@
 package com.devefx.test.demo;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
@@ -83,4 +86,43 @@ public class Triangle implements GLEventListener {
 
 	}
 
+	
+	public static void main(String[] args) throws UnsupportedEncodingException {
+		String s = "这是一个水群";
+		
+		byte[] b = s.getBytes("gbk"); // gbk比utf-8更小
+		
+		ByteBuffer buf = ByteBuffer.allocate(b.length); // int 为 4 bytes
+		buf.put(b);
+		buf.rewind();
+		
+		buf.order(ByteOrder.nativeOrder());
+		IntBuffer intBuffer = buf.asIntBuffer();
+		
+		int len = intBuffer.capacity();
+		int[] val = new int[len];
+		for (int i = 0; i < len; i++) {
+			val[i] = intBuffer.get();
+			System.out.print(val[i] + ",");
+		}
+		System.out.println();
+		// int[]转String
+		ByteBuffer buffer = ByteBuffer.allocate(val.length * 4);
+		for (int i = 0; i < val.length; i++) {
+			int v = val[i];
+			buffer.put((byte) ((v >>  0) & 0xff));
+			buffer.put((byte) ((v >>  8) & 0xff));
+			buffer.put((byte) ((v >> 16) & 0xff));
+			buffer.put((byte) ((v >> 24) & 0xff));
+		}
+		buffer.rewind();
+		
+		byte[] dst = new byte[buffer.capacity()];
+		buffer.get(dst);
+		
+		String text = new String(dst, "gbk");
+		
+		System.out.println(text);
+	}
+	
 }

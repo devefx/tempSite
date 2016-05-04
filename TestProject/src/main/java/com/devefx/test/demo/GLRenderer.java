@@ -4,26 +4,19 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 
-import sun.misc.Unsafe;
-
 import com.devefx.gamedata.common.TGAUtils;
 import com.devefx.gamedata.parser.WASFile;
 import com.devefx.gamedata.parser.struct.SequenceFrame;
-import com.devefx.test.demo.buffer.Vertex;
 import com.devefx.test.demo.buffer.VertexBuffer;
 import com.jogamp.common.nio.Buffers;
-import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLEventListener;
-import com.jogamp.opengl.GLException;
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
 
@@ -57,8 +50,6 @@ public class GLRenderer implements GLEventListener {
 	
 	private int texture;
 	
-	private static final String directByteBufferClassName = "java.nio.DirectByteBuffer";
-	
 	@Override
 	public void init(GLAutoDrawable drawable) {
 		GL2 gl = drawable.getGL().getGL2();
@@ -84,78 +75,11 @@ public class GLRenderer implements GLEventListener {
 		gl.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		
 		
-		gl.glBindVertexArray(1);
-		
-		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 1);
-		
-		gl.glBufferData(GL2.GL_ARRAY_BUFFER, 20 * 4, null, GL2.GL_DYNAMIC_DRAW);
-		
-		ByteBuffer buffer = gl.glMapBuffer(GL2.GL_ARRAY_BUFFER, GL2.GL_WRITE_ONLY);
-		
-		ByteBuffer buffer2 = ByteBuffer.allocateDirect(36);
-		
-		try {
-			Class<?> s = Class.forName("java.nio.DirectByteBuffer");
-			
-			System.out.println(buffer.getClass().getName());
-			
-			if (directByteBufferClassName.equals(buffer.getClass().getName())) {
-				
-				Field field = Buffer.class.getDeclaredField("address");
-				field.setAccessible(true);
-				System.out.println(field.get(buffer));
-				
-				Unsafe unsafe = getUnsafe();
-				
-				int[] a = new int[5];
-				a[1] = 6;
-				a[3] = 7;
-				int offset = unsafe.arrayBaseOffset(int[].class);
-				
-				for (long i = 0; i < a.length * 4 + offset; i++) {
-					System.out.print(unsafe.getByte(a, i) + " ");
-				}
-				System.out.println();
-				
-				long address = unsafe.getLong(buffer2, 16L);
-				unsafe.copyMemory(a, offset, null, address, 20);
-				
-				for (int i = 0; i < 20 + 16; i++) {
-					System.out.print(unsafe.getByte(address + i) + " ");
-				}
-				System.out.println();
-				
-				
-				
-				
-				
-				
-				System.out.println(16);
-			}
-			
-			
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		System.out.println(buffer);
 		//loadTexture("F:\\t.was", gl, 0, 0, true);
 		
 		loadTexture("f:\\1.jpg", gl, 200, 400, false);
 		
 
-	}
-	
-	public static Unsafe getUnsafe() {
-		try {
-			Field field = Unsafe.class.getDeclaredField("theUnsafe");
-			field.setAccessible(true);
-			return (Unsafe) field.get(null);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
 	}
 	
 	
@@ -216,8 +140,8 @@ public class GLRenderer implements GLEventListener {
 					};
 					
 					short[] s_index = new short[] {
-						(short) 2, (short) 1, (short) 0, (short) 0,
-						//(short) 0, (short) 1, (short) 2, (short) 3,
+						//(short) 2, (short) 1, (short) 0, (short) 0,
+						(short) 0, (short) 1, (short) 2, (short) 3,
 					};
 					
 					// color

@@ -77,6 +77,21 @@ public class OpenGLWindow {
 			quadIndices = Buffers.newDirectShortBuffer(Buffers.SIZEOF_SHORT * INDEX_VBO_SIZE);
 			
 			quad = new V3F_C4B_T2F_Quad();
+			quad.bl.vertices.x = 0.25f;
+			quad.bl.vertices.y = 0.25f;
+			quad.bl.vertices.z = 1f;
+			
+			quad.br.vertices.x = 0.75f;
+			quad.br.vertices.y = 0.25f;
+			quad.br.vertices.z = 1f;
+			
+			quad.tl.vertices.x = 0.25f;
+			quad.tl.vertices.y = 0.75f;
+			quad.tl.vertices.z = 1f;
+			
+			quad.tr.vertices.x = 0.75f;
+			quad.tr.vertices.y = 0.75f;
+			quad.tr.vertices.z = 1f;
 			
 			
 			setupVAOAndVBO();
@@ -135,7 +150,9 @@ public class OpenGLWindow {
 			gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, quadbuffersVBO.get(1));
 			
 			// 绘制图元
-			gl.glDrawElements(GL2.GL_TRIANGLES, 4, GL2.GL_UNSIGNED_SHORT, quadIndices);
+			gl.glDrawElements(GL2.GL_TRIANGLES, 4, GL2.GL_UNSIGNED_SHORT, 0);
+			
+			gl.glDrawArrays(GL2.GL_QUADS, 0, 4);
 			
 			// Must unbind the VAO before changing the element buffer.
 			gl.glBindVertexArray(0);
