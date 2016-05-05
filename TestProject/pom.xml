@@ -20,6 +20,11 @@
 		<version>2.3.2</version>
 	</dependency>
 	
+	<dependency>
+		<groupId>com.devefx</groupId>
+		<artifactId>GameEngine</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</dependency>
 	
 	<dependency>
 		<groupId>com.devefx</groupId>

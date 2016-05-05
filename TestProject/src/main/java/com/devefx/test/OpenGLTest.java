@@ -31,7 +31,7 @@ public class OpenGLTest {
 		
 		
 		FPSAnimator animator = new FPSAnimator(60);
-		animator.setUpdateFPSFrames(60, System.err);
+		//animator.setUpdateFPSFrames(60, System.err);
 		animator.add(window);
 		animator.start();
 		

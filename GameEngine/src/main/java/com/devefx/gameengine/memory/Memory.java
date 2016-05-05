@@ -3,6 +3,13 @@ package com.devefx.gameengine.memory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
 
 import sun.misc.Unsafe;
 
@@ -16,12 +23,16 @@ public final class Memory {
 	private static Unsafe unsafe;
 	
 	public static void copy(Object srcObject, long srcOffset, Buffer destObject, long destOffset, long count) {
-		Unsafe unsafe = getUnsafe();
-		if (destObject.isDirect()) { // is direct buffers
-			long address = unsafe.getLong(destObject, BUFFER_ADDRESS_OFFSET);
-			unsafe.copyMemory(srcObject, srcOffset, null, address + destOffset, count);
-		} else if (destObject.hasArray()) { // is heap buffers
-			unsafe.copyMemory(srcObject, srcOffset, destObject.array(), ARRAY_OFFSET + destOffset, count);
+		int size = memberSize(destObject);
+		if (size != 0) {
+			Unsafe unsafe = getUnsafe();
+			if (destObject.isDirect()) { // is direct buffers
+				long address = unsafe.getLong(destObject, BUFFER_ADDRESS_OFFSET);
+				unsafe.copyMemory(srcObject, srcOffset, null, address + destOffset, count * size);
+			} else if (destObject.hasArray()) { // is heap buffers
+				unsafe.copyMemory(srcObject, srcOffset, destObject.array(), ARRAY_OFFSET + destOffset, count * size);
+			}
+			destObject.position(destObject.position() + (int)count * size);
 		}
 	}
 	
@@ -34,6 +45,8 @@ public final class Memory {
 		return 0;
 	}
 	
+	
+	
 	public static Unsafe getUnsafe() {
 		try {
 			if (unsafe == null) {
@@ -45,6 +58,12 @@ public final class Memory {
 			e.printStackTrace();
 		}
 		return unsafe;
+	}
+	
+	static int memberSize(Buffer b) {
+		return b instanceof ByteBuffer ? 1 : (b instanceof ShortBuffer || b instanceof CharBuffer) ? 2 :
+			(b instanceof IntBuffer || b instanceof FloatBuffer) ? 4 : 
+				(b instanceof LongBuffer || b instanceof DoubleBuffer) ? 8 : 0;
 	}
 	
 	static int primitiveSize(Type t) {
