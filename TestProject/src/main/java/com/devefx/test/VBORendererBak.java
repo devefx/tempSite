@@ -3,6 +3,7 @@ package com.devefx.test;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -111,7 +112,10 @@ public class VBORendererBak implements GLEventListener {
 		setupBuffer(gl);
 		
 		try {
-			Texture tex = TextureIO.newTexture(new File("f:\\1.jpg"), true);
+			ClassLoader loader = Thread.currentThread().getContextClassLoader();
+			URL url = loader.getResource("1.jpg");
+			
+			Texture tex = TextureIO.newTexture(new File(url.getPath()), true);
 			texture = tex.getTextureObject(gl);
 			
 			quad.bl.texCoords = new Tex2F(0, 0);
