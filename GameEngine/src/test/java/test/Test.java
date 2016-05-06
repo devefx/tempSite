@@ -21,6 +21,6 @@ public class Test {
 		}
 		
 		glView.setDesignResolutionSize(800, 600);
-		
 	}
+	
 }

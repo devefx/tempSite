@@ -138,10 +138,10 @@ public class Renderer {
 		gl.glVertexAttribPointer(VERTEX_ATTRIB_POSITION, 3, GL2.GL_FLOAT, false, Types.SIZEOF_V3F_C4B_T2F, 0);
 		// colors
 		gl.glEnableVertexAttribArray(VERTEX_ATTRIB_COLOR);
-		gl.glVertexAttribPointer(VERTEX_ATTRIB_COLOR, 4, GL2.GL_UNSIGNED_BYTE, true, Types.SIZEOF_V3F_C4B_T2F, 0);
+		gl.glVertexAttribPointer(VERTEX_ATTRIB_COLOR, 4, GL2.GL_UNSIGNED_BYTE, true, Types.SIZEOF_V3F_C4B_T2F, 12);
 		// tex coords
 		gl.glEnableVertexAttribArray(VERTEX_ATTRIB_TEX_COORD);
-		gl.glVertexAttribPointer(VERTEX_ATTRIB_TEX_COORD, 2, GL2.GL_FLOAT, false, Types.SIZEOF_V3F_C4B_T2F, 0);
+		gl.glVertexAttribPointer(VERTEX_ATTRIB_TEX_COORD, 2, GL2.GL_FLOAT, false, Types.SIZEOF_V3F_C4B_T2F, 16);
 		
 		// generate vio for trianglesCommand
 		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, buffersVBO.get(1));
@@ -166,10 +166,10 @@ public class Renderer {
 		gl.glVertexAttribPointer(VERTEX_ATTRIB_POSITION, 3, GL2.GL_FLOAT, false, Types.SIZEOF_V3F_C4B_T2F, 0);
 		// colors
 		gl.glEnableVertexAttribArray(VERTEX_ATTRIB_COLOR);
-		gl.glVertexAttribPointer(VERTEX_ATTRIB_COLOR, 4, GL2.GL_UNSIGNED_BYTE, true, Types.SIZEOF_V3F_C4B_T2F, 0);
+		gl.glVertexAttribPointer(VERTEX_ATTRIB_COLOR, 4, GL2.GL_UNSIGNED_BYTE, true, Types.SIZEOF_V3F_C4B_T2F, 12);
 		// tex coords
 		gl.glEnableVertexAttribArray(VERTEX_ATTRIB_TEX_COORD);
-		gl.glVertexAttribPointer(VERTEX_ATTRIB_TEX_COORD, 2, GL2.GL_FLOAT, false, Types.SIZEOF_V3F_C4B_T2F, 0);
+		gl.glVertexAttribPointer(VERTEX_ATTRIB_TEX_COORD, 2, GL2.GL_FLOAT, false, Types.SIZEOF_V3F_C4B_T2F, 16);
 		
 		// generate vio for quadCommand
 		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, quadbuffersVBO.get(1));
@@ -198,14 +198,13 @@ public class Renderer {
 		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, quadbuffersVBO.get(0));
 		gl.glBufferData(GL2.GL_ARRAY_BUFFER, Types.SIZEOF_V3F_C4B_T2F * VBO_SIZE, quadVerts, GL2.GL_DYNAMIC_DRAW);
 	    
-		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);
-
 		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, buffersVBO.get(1));
 		gl.glBufferData(GL2.GL_ELEMENT_ARRAY_BUFFER, Buffers.SIZEOF_SHORT * INDEX_VBO_SIZE, indices, GL2.GL_STATIC_DRAW);
 
 		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, quadbuffersVBO.get(1));
 		gl.glBufferData(GL2.GL_ELEMENT_ARRAY_BUFFER, Buffers.SIZEOF_SHORT * INDEX_VBO_SIZE, quadIndices, GL2.GL_STATIC_DRAW);
 	    
+		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);
 		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
 	
@@ -215,10 +214,21 @@ public class Renderer {
 	}
 	
 	protected void flush2D() {
-		
+		flushQuads();
+		flushTriangles();
 	}
 	
 	protected void flush3D() {
+		
+	}
+	
+	protected void flushQuads() {
+		if (numberQuads > 0) {
+			drawBatchedQuads();
+		}
+	}
+	
+	protected void flushTriangles() {
 		
 	}
 	
@@ -251,16 +261,23 @@ public class Renderer {
 			QuadCommand cmd = (QuadCommand) command;
 			
 			if (cmd.isSkipBatching() || cmd.getQuadCount() * 4 > VBO_SIZE) {
-				
+				// Draw batched quads if VBO is full
+				drawBatchedQuads();
 			}
+			
+			fillQuads(cmd);
 			
 			batchQuadCommands.add(cmd);
 			
 			if (cmd.isSkipBatching()) {
-				
+				drawBatchedQuads();
 			}
 		}
 		
+	}
+	
+	protected void fillQuads(QuadCommand cmd) {
+		numberQuads += cmd.getQuadCount();
 	}
 	
 	protected void drawBatchedQuads() {
@@ -272,38 +289,46 @@ public class Renderer {
 		final GL2 gl = GLContext.getCurrentGL().getGL2();
 		
 		if (supportsShareableVAO) {
+			// 绑定VAO
 			gl.glBindVertexArray(quadVAO.get(0));
-			
+			// 绑定VBO
 			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, quadbuffersVBO.get(0));
-			
-			gl.glBufferData(GL2.GL_ARRAY_BUFFER, Types.SIZEOF_V3F_C4B_T2F * batchQuadCommands.size() * 4, null, GL2.GL_DYNAMIC_DRAW);
-			// TODO memcpy quadVerts
+			gl.glBufferData(GL2.GL_ARRAY_BUFFER, Types.SIZEOF_V3F_C4B_T2F_QUAD * numberQuads, null, GL2.GL_DYNAMIC_DRAW);
+			// 提交VBO数据
 			ByteBuffer buffer = gl.glMapBuffer(GL2.GL_ARRAY_BUFFER, GL2.GL_WRITE_ONLY);
-			
-			for (int i = 0, n = Types.SIZEOF_V3F_C4B_T2F * numberQuads * 4; i < n; i++) {
+			for (QuadCommand cmd : batchQuadCommands) {
+				cmd.getQuads().write(buffer);
 			}
 			gl.glUnmapBuffer(GL2.GL_ARRAY_BUFFER);
-			
+			// 解除VBO绑定
 			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);
-			gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, quadbuffersVBO.get(1));
 		} else {
+			// 绑定VBO
 			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, quadbuffersVBO.get(0));
-			
-			gl.glBufferData(GL2.GL_ARRAY_BUFFER, Types.SIZEOF_V3F_C4B_T2F * batchQuadCommands.size() * 4, quadVerts, GL2.GL_DYNAMIC_DRAW);
+			gl.glBufferData(GL2.GL_ARRAY_BUFFER, Types.SIZEOF_V3F_C4B_T2F_QUAD * numberQuads, quadVerts, GL2.GL_DYNAMIC_DRAW);
 			// vertices
 			gl.glVertexAttribPointer(VERTEX_ATTRIB_POSITION, 3, GL2.GL_FLOAT, false, Types.SIZEOF_V3F_C4B_T2F, 0);
 	        // colors
-			gl.glVertexAttribPointer(VERTEX_ATTRIB_COLOR, 4, GL2.GL_UNSIGNED_BYTE, true, Types.SIZEOF_V3F_C4B_T2F, 0);
+			gl.glVertexAttribPointer(VERTEX_ATTRIB_COLOR, 4, GL2.GL_UNSIGNED_BYTE, true, Types.SIZEOF_V3F_C4B_T2F, 12);
 	        // tex coords
-			gl.glVertexAttribPointer(VERTEX_ATTRIB_TEX_COORD, 2, GL2.GL_FLOAT, false, Types.SIZEOF_V3F_C4B_T2F, 0);
-	        
-	        gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, quadbuffersVBO.get(1));
+			gl.glVertexAttribPointer(VERTEX_ATTRIB_TEX_COORD, 2, GL2.GL_FLOAT, false, Types.SIZEOF_V3F_C4B_T2F, 16);
 		}
+		// 绑定VIO
+		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, quadbuffersVBO.get(1));
 		// Start drawing verties in batch
 		for (QuadCommand cmd : batchQuadCommands) {
 			
 		}
 		
+		gl.glDrawElements(GL2.GL_TRIANGLES, numberQuads * 6, GL2.GL_UNSIGNED_SHORT, 0);
+		
+		
+		if (supportsShareableVAO) {
+			gl.glBindVertexArray(0);
+		} else {
+			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);
+		}
+		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
 	
 	

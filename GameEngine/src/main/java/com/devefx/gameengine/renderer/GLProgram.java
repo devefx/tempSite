@@ -138,14 +138,61 @@ public class GLProgram {
 	public static final int VERTEX_ATTRIB_BLEND_WEIGHT = 7;
 	public static final int VERTEX_ATTRIB_BLEND_INDEX = 8;
 	
-	// Attribute names
-	public static final String ATTRIBUTE_NAME_POSITION = "a_position";
-	public static final String ATTRIBUTE_NAME_COLOR = "a_color";
-	public static final String ATTRIBUTE_NAME_TEX_COORD = "a_texCoord";
-	public static final String ATTRIBUTE_NAME_TEX_COORD1 = "a_texCoord1";
-	public static final String ATTRIBUTE_NAME_TEX_COORD2 = "a_texCoord2";
-	public static final String ATTRIBUTE_NAME_TEX_COORD3 = "a_texCoord3";
-	public static final String ATTRIBUTE_NAME_NORMAL = "a_normal";
-	public static final String ATTRIBUTE_NAME_BLEND_WEIGHT = "a_blendWeight";
-	public static final String ATTRIBUTE_NAME_BLEND_INDEX = "a_blendIndex";
+	// Uniform handle
+	public static final int UNIFORM_AMBIENT_COLOR = 0;
+	public static final int UNIFORM_P_MATRIX = 1;
+	public static final int UNIFORM_MV_MATRIX = 2;
+	public static final int UNIFORM_MVP_MATRIX = 3;
+	public static final int UNIFORM_NORMAL_MATRIX = 4;
+	public static final int UNIFORM_TIME = 5;
+	public static final int UNIFORM_SIN_TIME = 6;
+	public static final int UNIFORM_COS_TIME = 7;
+	public static final int UNIFORM_RANDOM01 = 8;
+	public static final int UNIFORM_SAMPLER0 = 9;
+	public static final int UNIFORM_SAMPLER1 = 10;
+	public static final int UNIFORM_SAMPLER2 = 11;
+	public static final int UNIFORM_SAMPLER3 = 12;
+	
+    /**Ambient Color uniform.*/
+    public static final String UNIFORM_NAME_AMBIENT_COLOR = "CC_AmbientColor";
+    /**Projection Matrix uniform.*/
+    public static final String UNIFORM_NAME_P_MATRIX = "CC_PMatrix";
+    /**Model view matrix uniform.*/
+    public static final String UNIFORM_NAME_MV_MATRIX = "CC_MVMatrix";
+    /**Model view projection uniform.*/
+    public static final String UNIFORM_NAME_MVP_MATRIX = "CC_MVPMatrix";
+    /**Normal matrix uniform.*/
+    public static final String UNIFORM_NAME_NORMAL_MATRIX = "CC_NormalMatrix";
+    /**Time uniform.*/
+    public static final String UNIFORM_NAME_TIME = "CC_Time";
+    /**Sin time uniform.*/
+    public static final String UNIFORM_NAME_SIN_TIME = "CC_SinTime";
+    /**Cos time uniform.*/
+    public static final String UNIFORM_NAME_COS_TIME = "CC_CosTime";
+    /**Random number uniform.*/
+    public static final String UNIFORM_NAME_RANDOM01 = "CC_Random01";
+    /**
+     @Sampler uniform 0-3, used for textures.
+    */
+    public static final String UNIFORM_NAME_SAMPLER0 = "CC_Texture0";
+    public static final String UNIFORM_NAME_SAMPLER1 = "CC_Texture1";
+    public static final String UNIFORM_NAME_SAMPLER2 = "CC_Texture2";
+    public static final String UNIFORM_NAME_SAMPLER3 = "CC_Texture3";
+    
+    
+    /**Attribute color.*/
+    public static final String ATTRIBUTE_NAME_COLOR = "a_color";
+    /**Attribute position.*/
+    public static final String ATTRIBUTE_NAME_POSITION = "a_position";
+    /**@Attribute Texcoord 0-3.*/
+    public static final String ATTRIBUTE_NAME_TEX_COORD = "a_texCoord";
+    public static final String ATTRIBUTE_NAME_TEX_COORD1 = "a_texCoord1";
+    public static final String ATTRIBUTE_NAME_TEX_COORD2 = "a_texCoord2";
+    public static final String ATTRIBUTE_NAME_TEX_COORD3 = "a_texCoord3";
+    /**Attribute normal.*/
+    public static final String ATTRIBUTE_NAME_NORMAL = "a_normal";
+    /**Attribute blend weight.*/
+    public static final String ATTRIBUTE_NAME_BLEND_WEIGHT = "a_blendWeight";
+    /**Attribute blend index.*/
+    public static final String ATTRIBUTE_NAME_BLEND_INDEX = "a_blendIndex";
 }

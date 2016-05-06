@@ -1,15 +1,12 @@
-package test;
+package com.devefx.test;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 
 import com.devefx.gameengine.base.types.Color4B;
-import com.devefx.gameengine.base.types.Tex2F;
 import com.devefx.gameengine.base.types.Types;
 import com.devefx.gameengine.base.types.V3F_C4B_T2F_Quad;
 import com.devefx.gameengine.base.types.Vec3;
@@ -21,11 +18,8 @@ import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLContext;
 import com.jogamp.opengl.GLEventListener;
-import com.jogamp.opengl.GLException;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.util.FPSAnimator;
-import com.jogamp.opengl.util.texture.Texture;
-import com.jogamp.opengl.util.texture.TextureIO;
 
 public class OpenGLWindow {
 	
@@ -72,7 +66,6 @@ public class OpenGLWindow {
 		protected ByteBuffer quadVerts;
 		protected ShortBuffer quadIndices;
 		
-		protected int texture;
 		protected V3F_C4B_T2F_Quad quad;
 		
 		public static final boolean supportsShareableVAO = true;
@@ -130,21 +123,6 @@ public class OpenGLWindow {
 			quad.tr.vertices = new Vec3(40, 40, 1);
 			quad.tr.colors = new Color4B(255, 255, 0, 255);
 			
-			try {
-				ClassLoader loader = Thread.currentThread().getContextClassLoader();
-				URL url = loader.getResource("1.jpg");
-				
-				Texture tex = TextureIO.newTexture(new File(url.getPath()), true);
-				texture = tex.getTextureObject();
-				
-				quad.bl.texCoords = new Tex2F(0, 0);
-				quad.br.texCoords = new Tex2F(1, 0);
-				quad.tl.texCoords = new Tex2F(0, 1);
-				quad.tr.texCoords = new Tex2F(1, 1);
-				
-			} catch (GLException | IOException e) {
-				e.printStackTrace();
-			}
 		}
 		
 		private void initCreateProgram() throws IOException {
