@@ -1,5 +1,6 @@
 package com.devefx.test;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -7,19 +8,23 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import com.devefx.gameengine.base.types.Color4B;
+import com.devefx.gameengine.base.types.Tex2F;
 import com.devefx.gameengine.base.types.Types;
-import com.devefx.gameengine.base.types.V3F_C4B_T2F;
 import com.devefx.gameengine.base.types.V3F_C4B_T2F_Quad;
-import com.devefx.test.demo.quad.Quad;
+import com.devefx.gameengine.base.types.Vec3;
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLEventListener;
+import com.jogamp.opengl.GLException;
+import com.jogamp.opengl.util.texture.Texture;
+import com.jogamp.opengl.util.texture.TextureIO;
 
 public class VBORendererBak implements GLEventListener {
 
 	static int VERTEX_ATTRIB_POSITION = 0;
 	static int VERTEX_ATTRIB_COLOR = 1;
+	static int VERTEX_ATTRIB_TEX_COORD = 2;
 	static int MVP_MATRIX = 0;
 	
 	GLProgram glProgram = new GLProgram();
@@ -42,7 +47,7 @@ public class VBORendererBak implements GLEventListener {
 	
 	V3F_C4B_T2F_Quad quad = new V3F_C4B_T2F_Quad();
 	
-	boolean isQuad = false;
+	boolean isQuad = true;
 	
 	@Override
 	public void init(GLAutoDrawable drawable) {
@@ -56,41 +61,32 @@ public class VBORendererBak implements GLEventListener {
 		// 裁剪横坐标
 		gl.glOrtho(0, 200, 0, 100, -100, 100);
 		
-		quad.bl.vertices.x = 10;
-		quad.bl.vertices.y = 10;
-		quad.bl.vertices.z = 1;
-		quad.bl.colors = new Color4B(255, 255, 0, 255);
+		quad.bl.vertices = new Vec3(10, 10, 1);
+		quad.bl.colors = new Color4B(255, 0, 0, 255);
 		
-		quad.br.vertices.x = 25;
-		quad.br.vertices.y = 20;
-		quad.br.vertices.z = 1;
+		quad.br.vertices = new Vec3(40, 10, 1);
 		quad.br.colors = new Color4B(0, 255, 0, 255);
 		
-		quad.tl.vertices.x = 20;
-		quad.tl.vertices.y = 30;
-		quad.tl.vertices.z = 1;
-		quad.tl.colors = new Color4B(0, 255, 0, 255);
+		quad.tl.vertices = new Vec3(10, 40, 1);
+		quad.tl.colors = new Color4B(0, 0, 255, 255);
 		
-		quad.tr.vertices.x = 40;
-		quad.tr.vertices.y = 40;
-		quad.tr.vertices.z = 1;
+		quad.tr.vertices = new Vec3(40, 40, 1);
 		quad.tr.colors = new Color4B(255, 255, 0, 255);
 		
 		//[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -128, 63, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 		
 		// 数组，包含了meshArray.length/2对二维坐标
 		array = new float[] {
-				10, 10, 1,   1, 1, 0, 1,
-				25, 20, 1,   0, 1, 0, 1,
-				20, 30, 1,   0, 1, 0, 1,
-			    
-				40, 40, 1,   1, 1, 0, 1,
-				50, 50, 1,   1, 1, 0, 1,
+				10, 10, 1,   1, 0, 0, 1, // red			bl
+				40, 10, 1,   0, 1, 0, 1, // green		br
+				10, 40, 1,   0, 0, 1, 1, // blue		tl
+				40, 40, 1,   1, 1, 0, 1, // yellow		tr
+				
+				50, 50, 1,   0, 1, 0, 1,
 				50, 60, 1,   0, 1, 0, 1,
-			    
-				72, 70, 1,   1, 0, 0, 1,
-				80, 80, 1,   1, 0, 0, 1,
-				80, 90, 1,   1, 0, 0, 1,
+				72, 70, 1,   0, 0, 1, 1, 
+				80, 80, 1,   0, 0, 1, 1,
+				80, 90, 1,   0, 0, 1, 1,
 		};
 		
 		
@@ -100,7 +96,8 @@ public class VBORendererBak implements GLEventListener {
 		// 顶点索引
 		int[] int_array = {
 			0, 1, 2,
-			3, 4, 5,
+			3, 2, 1,
+			
 			6, 7, 8
 		};
 		indices = IntBuffer.allocate(int_array.length);
@@ -112,6 +109,20 @@ public class VBORendererBak implements GLEventListener {
 		initCreateProgram(gl);
 		
 		setupBuffer(gl);
+		
+		try {
+			Texture tex = TextureIO.newTexture(new File("f:\\1.jpg"), true);
+			texture = tex.getTextureObject(gl);
+			
+			quad.bl.texCoords = new Tex2F(0, 0);
+			quad.br.texCoords = new Tex2F(1, 0);
+			quad.tl.texCoords = new Tex2F(0, 1);
+			quad.tr.texCoords = new Tex2F(1, 1);
+			
+		} catch (GLException | IOException e) {
+			e.printStackTrace();
+		}
+		
 	}
 
 	int vertShader;
@@ -217,6 +228,7 @@ public class VBORendererBak implements GLEventListener {
 			
 			VERTEX_ATTRIB_POSITION = GLProgram.VERTEX_ATTRIB_POSITION;
 			VERTEX_ATTRIB_COLOR = GLProgram.VERTEX_ATTRIB_COLOR;
+			VERTEX_ATTRIB_TEX_COORD = GLProgram.VERTEX_ATTRIB_TEX_COORD;
 			MVP_MATRIX = GLProgram.UNIFORM_AMBIENT_COLOR;
 		}
 		
@@ -336,6 +348,10 @@ public class VBORendererBak implements GLEventListener {
 			// colors
 			gl.glEnableVertexAttribArray(VERTEX_ATTRIB_COLOR);
 			gl.glVertexAttribPointer(VERTEX_ATTRIB_COLOR, 4, GL2.GL_UNSIGNED_BYTE, true, Types.SIZEOF_V3F_C4B_T2F, 12);
+			
+			// tex coords
+			gl.glEnableVertexAttribArray(VERTEX_ATTRIB_TEX_COORD);
+			gl.glVertexAttribPointer(VERTEX_ATTRIB_TEX_COORD, 2, GL2.GL_FLOAT, false, Types.SIZEOF_V3F_C4B_T2F, 16);
 		} else {
 			// vertices
 			gl.glEnableVertexAttribArray(VERTEX_ATTRIB_POSITION);
@@ -367,6 +383,9 @@ public class VBORendererBak implements GLEventListener {
 		// 填充背景颜色
 		gl.glClear(GL2.GL_COLOR_BUFFER_BIT);
 		
+		if (gl.glIsTexture(texture)) {
+			gl.glBindTexture(GL2.GL_TEXTURE_2D, texture);
+		}
 		
 		// 绑定vao
 		gl.glBindVertexArray(quadVAO.get(0));
@@ -391,7 +410,8 @@ public class VBORendererBak implements GLEventListener {
 		// 绘制图形
 		//gl.glDrawElements(GL2.GL_TRIANGLES, meshArraybuffer.capacity() / BUFFER_SIZE, GL2.GL_UNSIGNED_INT, 0);
 		
-		gl.glDrawElements(GL2.GL_QUADS, 4, GL2.GL_UNSIGNED_INT, 0);
+		gl.glDrawElements(GL2.GL_TRIANGLES, 6, GL2.GL_UNSIGNED_INT, 0);
+		
 		
 		// 解除绑定
 		gl.glBindVertexArray(0);
