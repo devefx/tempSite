@@ -1,10 +1,10 @@
 package com.devefx.gameengine.base.types;
 
-import java.nio.Buffer;
+import java.nio.ByteBuffer;
 
-import com.devefx.gameengine.memory.Struct;
+import com.devefx.gameengine.buffer.OutputBuffer;
 
-public class V3F_C4B_T2F_Quad extends Struct {
+public class V3F_C4B_T2F_Quad implements OutputBuffer {
 	/**
 	 * bottom left
 	 */
@@ -23,7 +23,7 @@ public class V3F_C4B_T2F_Quad extends Struct {
 	public V3F_C4B_T2F tr = new V3F_C4B_T2F();
 	
 	@Override
-	public void write(Buffer buffer) {
+	public void write(ByteBuffer buffer) {
 		bl.write(buffer);
 		br.write(buffer);
 		tl.write(buffer);

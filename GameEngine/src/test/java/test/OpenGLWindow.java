@@ -2,7 +2,6 @@ package test;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -13,8 +12,11 @@ import com.devefx.gameengine.base.types.Tex2F;
 import com.devefx.gameengine.base.types.Types;
 import com.devefx.gameengine.base.types.V3F_C4B_T2F_Quad;
 import com.devefx.gameengine.base.types.Vec3;
+import com.devefx.gameengine.math.Mat4;
 import com.devefx.gameengine.renderer.GLProgram;
 import com.jogamp.common.nio.Buffers;
+import com.jogamp.newt.event.WindowAdapter;
+import com.jogamp.newt.event.WindowEvent;
 import com.jogamp.newt.opengl.GLWindow;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GLAutoDrawable;
@@ -41,27 +43,18 @@ public class OpenGLWindow {
 		window.addGLEventListener(new Renderer());
 		window.setVisible(true);
 		
-		FPSAnimator animator = new FPSAnimator(60);
+		final FPSAnimator animator = new FPSAnimator(60);
 		//animator.setUpdateFPSFrames(60, System.err);
 		animator.add(window);
 		animator.start();
 		
-		while (animator.isAnimating() && window.isVisible()) {
-			Thread.sleep(1);
-		}
-		animator.stop();
-		window.destroy();
+		window.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowDestroyed(WindowEvent e) {
+				animator.stop();
+			}
+		});
 	}
-	
-	
-	static String readFile(String filename) throws IOException {
-		ClassLoader loader = Thread.currentThread().getContextClassLoader();
-		InputStream is = loader.getResourceAsStream(filename);
-		byte[] buf = new byte[is.available()];
-		is.read(buf);
-		return new String(buf);
-	}
-	
 	
 	static class Renderer implements GLEventListener {
 		
@@ -86,7 +79,7 @@ public class OpenGLWindow {
 		@Override
 		public void init(GLAutoDrawable drawable) {
 			glProgram = new GLProgram();
-			
+			 
 			quadVAO = Buffers.newDirectIntBuffer(1);
 			quadbuffersVBO = Buffers.newDirectIntBuffer(2);
 			quadVerts = ByteBuffer.allocate(Types.SIZEOF_V3F_C4B_T2F * VBO_SIZE);
@@ -150,15 +143,7 @@ public class OpenGLWindow {
 		private void initCreateProgram() throws IOException {
 			final GL2 gl = GLContext.getCurrentGL().getGL2();
 			
-			String vertexShaderString = readFile("shader_PositionTextureColor.vert");
-			String fragmentShaderString = readFile("shader_PositionTextureColor.frag");
-			
-			if (gl.isGL3core()) {
-				vertexShaderString = "#version 130\n"+vertexShaderString;
-	            fragmentShaderString = "#version 130\n"+fragmentShaderString;
-			}
-			
-			if (glProgram.init(vertexShaderString, fragmentShaderString)) {
+			if (glProgram.initWithFilename("shader_PositionTextureColor.vert", "shader_PositionTextureColor.frag")) {
 				glProgram.link();
 				glProgram.use();
 			}
@@ -169,9 +154,17 @@ public class OpenGLWindow {
 					 0.0f,  0.0f, -0.01f, 0.0f,
 					-1.0f, -1.0f,   0.0f, 1.0f
 				};
-			gl.glUniformMatrix4fv(GLProgram.UNIFORM_AMBIENT_COLOR, 1, false, matrix, 0);
 			
-			System.out.println(gl.glGetError());
+			gl.glOrtho(0, 800, 0, 600, -1024, 1024);
+			
+			float[] m = new float[16];
+	        gl.glGetFloatv(GL2.GL_MODELVIEW_MATRIX, m, 0);
+	        
+	        Mat4 mat4 = new Mat4();
+	        Mat4.createOrthographicOffCenter(0, 800, 0, 600, -1024, 1024, mat4);
+	        
+			int location = gl.glGetUniformLocation(glProgram.getProgram(), "CC_MVPMatrix");
+			gl.glUniformMatrix4fv(location, 1, false, mat4.m, 0);
 		}
 		
 		private void setupVAOAndVBO() {
@@ -210,6 +203,11 @@ public class OpenGLWindow {
 			gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
 			gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 			
+			
+			// 绑定纹理
+			if (gl.glIsTexture(texture)) {
+				gl.glBindTexture(GL2.GL_TEXTURE_2D, texture);
+			}
 			// 绑定VAO
 			gl.glBindVertexArray(quadVAO.get(0));
 			// 绑定VBO
@@ -221,31 +219,23 @@ public class OpenGLWindow {
 			gl.glUnmapBuffer(GL2.GL_ARRAY_BUFFER);
 			// 解除VBO绑定
 			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);
-			// 绑定VIO
-			gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, quadbuffersVBO.get(1));
-			
-			
 			// 绘制图元
 			gl.glDrawElements(GL2.GL_TRIANGLES, 6, GL2.GL_UNSIGNED_SHORT, 0);
-			
-			
-			
-			// Must unbind the VAO before changing the element buffer.
+			// 解除VAO绑定
 			gl.glBindVertexArray(0);
-			gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, 0);
-			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);
+			
 			
 			gl.glFlush();
 		}
 		@Override
 		public void reshape(GLAutoDrawable drawable, int x, int y, int width,
 				int height) {
-			// TODO Auto-generated method stub
+			final GL2 gl = drawable.getGL().getGL2();
+			gl.glViewport(0, 0, width, height);
 			
 		}
 		@Override
 		public void dispose(GLAutoDrawable drawable) {
-			// TODO Auto-generated method stub
 			
 		}
 	}

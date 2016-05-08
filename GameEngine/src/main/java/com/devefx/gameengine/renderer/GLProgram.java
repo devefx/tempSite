@@ -1,5 +1,12 @@
 package com.devefx.gameengine.renderer;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.devefx.gameengine.base.Director;
+import com.devefx.gameengine.math.Mat4;
+import com.devefx.gameengine.resources.Resources;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GLContext;
 
@@ -9,11 +16,50 @@ public class GLProgram {
 	protected int vertexShader;
 	protected int fragmentShader;
 	
-	public boolean init(String vShaderString, String fShaderString) {
+	protected Map<String, VertexAttrib> vertexAttribs;
+	protected Map<String, Uniform> userUniforms;
+	protected int[] builtInUniforms;
+	
+	protected UniformFlag flag = new UniformFlag();
+	
+	protected Director director;
+	
+	public static GLProgram createWithString(String vShaderString, String fShaderString) {
+		GLProgram program = new GLProgram();
+		if (program.initWithString(vShaderString, fShaderString)) {
+			program.link();
+			program.updateUniforms();
+			return program;
+		}
+		return null;
+	}
+	
+	public static GLProgram createWithFilename(String vShaderFilename, String fShaderFilename) {
+		GLProgram program = new GLProgram();
+		if (program.initWithFilename(vShaderFilename, fShaderFilename)) {
+			program.link();
+			program.updateUniforms();
+			return program;
+		}
+		return null;
+	}
+	
+	public GLProgram() {
+		program = 0;
+		vertexShader = 0;
+		fragmentShader = 0;
+		
+		vertexAttribs = new HashMap<String, GLProgram.VertexAttrib>();
+		userUniforms = new HashMap<String, GLProgram.Uniform>();
+		builtInUniforms = new int[UNIFORM_MAX];
+		
+		director = Director.getInstance();
+		assert(director != null);
+	}
+	
+	public boolean initWithString(String vShaderString, String fShaderString) {
 		final GL2 gl = GLContext.getCurrentGL().getGL2();
-		
 		program = gl.glCreateProgram();
-		
 		if (vShaderString != null) {
 			if (!compileShader(GL2.GL_VERTEX_SHADER, vShaderString)) {
 				System.err.println("ERROR: Failed to compile vertex shader");
@@ -26,11 +72,90 @@ public class GLProgram {
 				return false;
 			}
 		}
-		
 		gl.glAttachShader(program, vertexShader);
         gl.glAttachShader(program, fragmentShader);
-		
 		return true;
+	}
+	
+	public boolean initWithFilename(String vShaderFilename, String fShaderFilename) {
+		try {
+			return initWithString(Resources.getResourceAsString(vShaderFilename),
+					Resources.getResourceAsString(fShaderFilename));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
+	protected void bindPredefinedVertexAttribs() {
+		final GL2 gl = GLContext.getCurrentGL().getGL2();
+		gl.glBindAttribLocation(program, VERTEX_ATTRIB_POSITION, ATTRIBUTE_NAME_POSITION);
+		gl.glBindAttribLocation(program, VERTEX_ATTRIB_COLOR, ATTRIBUTE_NAME_COLOR);
+		gl.glBindAttribLocation(program, VERTEX_ATTRIB_TEX_COORD, ATTRIBUTE_NAME_TEX_COORD);
+		gl.glBindAttribLocation(program, VERTEX_ATTRIB_TEX_COORD1, ATTRIBUTE_NAME_TEX_COORD1);
+		gl.glBindAttribLocation(program, VERTEX_ATTRIB_TEX_COORD2, ATTRIBUTE_NAME_TEX_COORD2);
+		gl.glBindAttribLocation(program, VERTEX_ATTRIB_TEX_COORD3, ATTRIBUTE_NAME_TEX_COORD3);
+		gl.glBindAttribLocation(program, VERTEX_ATTRIB_NORMAL, ATTRIBUTE_NAME_NORMAL);
+		gl.glBindAttribLocation(program, VERTEX_ATTRIB_BLEND_WEIGHT, ATTRIBUTE_NAME_BLEND_WEIGHT);
+		gl.glBindAttribLocation(program, VERTEX_ATTRIB_BLEND_INDEX, ATTRIBUTE_NAME_BLEND_INDEX);
+	}
+	
+	protected void parseVertexAttribs() {
+		final GL2 gl = director.getGL();
+		
+		int[] activeAttributes = new int[1];
+		gl.glGetProgramiv(program, GL2.GL_ACTIVE_ATTRIBUTES, activeAttributes, 0);
+		if (activeAttributes[0] > 0) {
+			int[] length = new int[1];
+			gl.glGetProgramiv(program, GL2.GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, length, 0);
+			if (length[0] > 0) {
+				byte[] attrName = new byte[length[0]];
+				int[] lengthAndSizeAndType = new int[3];
+				for (int i = 0; i < activeAttributes[0]; i++) {
+					gl.glGetActiveAttrib(program, i, length[0], lengthAndSizeAndType, 0, lengthAndSizeAndType, 1, lengthAndSizeAndType, 2, attrName, 0);
+				}
+				VertexAttrib vertexAttrib = new VertexAttrib();
+				vertexAttrib.size = lengthAndSizeAndType[1];
+				vertexAttrib.type = lengthAndSizeAndType[2];
+				vertexAttrib.name = new String(attrName, 0, lengthAndSizeAndType[0]);
+				vertexAttrib.index = gl.glGetAttribLocation(program, vertexAttrib.name);
+				vertexAttribs.put(vertexAttrib.name, vertexAttrib);
+			}
+		} else {
+			int[] length = new int[1];
+			byte[] errorLog = new byte[1024]; 
+			gl.glGetProgramInfoLog(program, 1024, length, 0, errorLog, 0);
+			System.err.println("Error linking shader program: " + new String(errorLog, 0, length[0]));
+		}
+	}
+	
+	protected void parseUniforms() {
+		final GL2 gl = director.getGL();
+		
+		int[] activeUniforms = new int[1];
+		gl.glGetProgramiv(program, GL2.GL_ACTIVE_UNIFORMS, activeUniforms, 0);
+		if (activeUniforms[0] > 0) {
+			int[] length = new int[1];
+			gl.glGetProgramiv(program, GL2.GL_ACTIVE_UNIFORM_MAX_LENGTH, length, 0);
+			if (length[0] > 0) {
+				byte[] uniformName = new byte[length[0]];
+				int[] lengthAndSizeAndType = new int[3];
+				for (int i = 0; i < activeUniforms[0]; i++) {
+					gl.glGetActiveUniform(program, i, length[0], lengthAndSizeAndType, 0, lengthAndSizeAndType, 1, lengthAndSizeAndType, 2, uniformName, 0);
+					Uniform uniform = new Uniform();
+					uniform.size = lengthAndSizeAndType[1];
+					uniform.type = lengthAndSizeAndType[2];
+					uniform.name = new String(uniformName, 0, lengthAndSizeAndType[0]);
+					uniform.location = gl.glGetUniformLocation(program, uniform.name);
+					userUniforms.put(uniform.name, uniform);
+				}
+			}
+		} else {
+			int[] length = new int[1];
+			byte[] errorLog = new byte[1024]; 
+			gl.glGetProgramInfoLog(program, 1024, length, 0, errorLog, 0);
+			System.err.println("Error linking shader program: " + new String(errorLog, 0, length[0]));
+		}
 	}
 	
 	public int getVertexShader() {
@@ -43,29 +168,12 @@ public class GLProgram {
 		return program;
 	}
 	
-	public void link() {
-		final GL2 gl = GLContext.getCurrentGL().getGL2();
-		
-		bindPredefinedVertexAttribs();
-		
-		gl.glLinkProgram(program);
-		
-		parseVertexAttribs();
-		parseUniforms();
-		
-		if (vertexShader != 0) {
-			gl.glDeleteShader(vertexShader);
-			vertexShader = 0;
-		}
-		if (fragmentShader != 0) {
-			gl.glDeleteShader(fragmentShader);
-			fragmentShader = 0;
-		}
+	public Uniform getUniform(String key) {
+		return userUniforms.get(key);
 	}
 	
-	public void use() {
-		final GL2 gl = GLContext.getCurrentGL().getGL2();
-		gl.glUseProgram(program);
+	public VertexAttrib getVertexAttrib(String key) {
+		return vertexAttribs.get(key);
 	}
 	
 	protected boolean compileShader(int type, String source) {
@@ -105,27 +213,111 @@ public class GLProgram {
         return (type == GL2.GL_VERTEX_SHADER && (vertexShader = shader) != 0) ||
         		(type == GL2.GL_FRAGMENT_SHADER && (fragmentShader = shader) != 0);
 	}
+
+	public int getAttribLocation(String attributName) {
+		GL2 gl = director.getGL();
+		return gl.glGetAttribLocation(program, attributName);
+	}
+	public int getUniformLocation(String uniformName) {
+		GL2 gl = director.getGL();
+		return gl.glGetUniformLocation(program, uniformName);
+	}
+	public void bindAttribLocation(String attributeName, int index) {
+		GL2 gl = director.getGL();
+		gl.glBindAttribLocation(program, index, attributeName);
+	}
+	public void updateUniforms() {
+		builtInUniforms[UNIFORM_AMBIENT_COLOR] = getUniformLocation(UNIFORM_NAME_AMBIENT_COLOR);
+	    builtInUniforms[UNIFORM_P_MATRIX] = getUniformLocation(UNIFORM_NAME_P_MATRIX);
+	    builtInUniforms[UNIFORM_MV_MATRIX] = getUniformLocation(UNIFORM_NAME_MV_MATRIX);
+	    builtInUniforms[UNIFORM_MVP_MATRIX] = getUniformLocation(UNIFORM_NAME_MVP_MATRIX);
+	    builtInUniforms[UNIFORM_NORMAL_MATRIX] = getUniformLocation(UNIFORM_NAME_NORMAL_MATRIX);
+	    
+	    builtInUniforms[UNIFORM_TIME] = getUniformLocation(UNIFORM_NAME_TIME);
+	    builtInUniforms[UNIFORM_SIN_TIME] = getUniformLocation(UNIFORM_NAME_SIN_TIME);
+	    builtInUniforms[UNIFORM_COS_TIME] = getUniformLocation(UNIFORM_NAME_COS_TIME);
+
+	    builtInUniforms[UNIFORM_RANDOM01] = getUniformLocation(UNIFORM_NAME_RANDOM01);
+
+	    builtInUniforms[UNIFORM_SAMPLER0] = getUniformLocation(UNIFORM_NAME_SAMPLER0);
+	    builtInUniforms[UNIFORM_SAMPLER1] = getUniformLocation(UNIFORM_NAME_SAMPLER1);
+	    builtInUniforms[UNIFORM_SAMPLER2] = getUniformLocation(UNIFORM_NAME_SAMPLER2);
+	    builtInUniforms[UNIFORM_SAMPLER3] = getUniformLocation(UNIFORM_NAME_SAMPLER3);
+	    
+	    flag.usesP = builtInUniforms[UNIFORM_P_MATRIX] != -1;
+	    flag.usesMV = builtInUniforms[UNIFORM_MV_MATRIX] != -1;
+	    flag.usesMVP = builtInUniforms[UNIFORM_MVP_MATRIX] != -1;
+	    flag.usesNormal = builtInUniforms[UNIFORM_NORMAL_MATRIX] != -1;
+	    flag.usesTime = (builtInUniforms[UNIFORM_TIME] != -1 ||
+	    		builtInUniforms[UNIFORM_SIN_TIME] != -1 ||
+	    		builtInUniforms[UNIFORM_COS_TIME] != -1);
+	    flag.usesRandom = builtInUniforms[UNIFORM_RANDOM01] != -1;
+	    
+	    this.use();
+	}
 	
-	protected void bindPredefinedVertexAttribs() {
+	public void setUniformsForBuiltins(Mat4 matrixMV) {
+		// TODO
+	}
+	
+	public void link() {
 		final GL2 gl = GLContext.getCurrentGL().getGL2();
-		gl.glBindAttribLocation(program, VERTEX_ATTRIB_POSITION, ATTRIBUTE_NAME_POSITION);
-		gl.glBindAttribLocation(program, VERTEX_ATTRIB_COLOR, ATTRIBUTE_NAME_COLOR);
-		gl.glBindAttribLocation(program, VERTEX_ATTRIB_TEX_COORD, ATTRIBUTE_NAME_TEX_COORD);
-		gl.glBindAttribLocation(program, VERTEX_ATTRIB_TEX_COORD1, ATTRIBUTE_NAME_TEX_COORD1);
-		gl.glBindAttribLocation(program, VERTEX_ATTRIB_TEX_COORD2, ATTRIBUTE_NAME_TEX_COORD2);
-		gl.glBindAttribLocation(program, VERTEX_ATTRIB_TEX_COORD3, ATTRIBUTE_NAME_TEX_COORD3);
-		gl.glBindAttribLocation(program, VERTEX_ATTRIB_NORMAL, ATTRIBUTE_NAME_NORMAL);
-		gl.glBindAttribLocation(program, VERTEX_ATTRIB_BLEND_WEIGHT, ATTRIBUTE_NAME_BLEND_WEIGHT);
-		gl.glBindAttribLocation(program, VERTEX_ATTRIB_BLEND_INDEX, ATTRIBUTE_NAME_BLEND_INDEX);
+		
+		bindPredefinedVertexAttribs();
+		
+		gl.glLinkProgram(program);
+		
+		parseVertexAttribs();
+		parseUniforms();
+		
+		if (vertexShader != 0) {
+			gl.glDeleteShader(vertexShader);
+			vertexShader = 0;
+		}
+		if (fragmentShader != 0) {
+			gl.glDeleteShader(fragmentShader);
+			fragmentShader = 0;
+		}
 	}
 	
-	protected void parseVertexAttribs() {
-		
+	public void use() {
+		final GL2 gl = director.getGL();
+		gl.glUseProgram(program);
 	}
 	
-	protected void parseUniforms() {
-		
+	public void reset() {
+		program = 0;
+		vertexShader = 0;
+		fragmentShader = 0;
+		builtInUniforms = new int[UNIFORM_MAX];
 	}
+	
+	public class VertexAttrib {
+		int index;
+		int size;
+		int type;
+		String name;
+	}
+	
+	public class Uniform {
+		int location;
+		int size;
+		int type;
+		String name;
+	}
+	
+	class UniformFlag {
+		boolean usesTime;
+		boolean usesNormal;
+		boolean usesMVP;
+		boolean usesMV;
+		boolean usesP;
+		boolean usesRandom;
+	}
+	// Shader name
+	public static final String SHADER_NAME_POSITION_TEXTURE_COLOR = "ShaderPositionTextureColor";
+	
+	public static final String SHADER_NAME_POSITION_TEXTURE = "ShaderPositionTexture";
 	
 	// Vertex attribute
 	public static final int VERTEX_ATTRIB_POSITION = 0;
@@ -152,6 +344,7 @@ public class GLProgram {
 	public static final int UNIFORM_SAMPLER1 = 10;
 	public static final int UNIFORM_SAMPLER2 = 11;
 	public static final int UNIFORM_SAMPLER3 = 12;
+	public static final int UNIFORM_MAX = 13;
 	
     /**Ambient Color uniform.*/
     public static final String UNIFORM_NAME_AMBIENT_COLOR = "CC_AmbientColor";

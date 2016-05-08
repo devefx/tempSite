@@ -30,12 +30,12 @@ public class VBORendererBak implements GLEventListener {
 	
 	GLProgram glProgram = new GLProgram();
 	
-	// ÓÉÊı×émeshArray×ª»»³ÉµÄ»º´æbuffer 
+	// ç”±æ•°ç»„meshArrayè½¬æ¢æˆçš„ç¼“å­˜buffer 
 	protected FloatBuffer meshArraybuffer;
 	
 	// vao
 	protected IntBuffer quadVAO = IntBuffer.allocate(1);
-	// VBO/VIO¶ÔÏó¼¯ºÏ
+	// VBO/VIOå¯¹è±¡é›†åˆ
 	protected IntBuffer buffersVBO = IntBuffer.allocate(2);
 	
 	protected IntBuffer indices;
@@ -52,15 +52,17 @@ public class VBORendererBak implements GLEventListener {
 	
 	@Override
 	public void init(GLAutoDrawable drawable) {
+		
 		final GL2 gl = drawable.getGL().getGL2();
-		// ÉèÖÃ±³¾°ÑÕÉ«  
+		// è®¾ç½®èƒŒæ™¯é¢œè‰²  
 		gl.glClearColor(0.0f, 0.0f, 0.0f, 1f);
-		// ÊÓµã´óĞ¡
-		gl.glViewport(0, 0, 100, 100);
+		gl.glColor3f(255, 255, 0);
+		// è§†ç‚¹å¤§å°
+	//	gl.glViewport(0, 0, 100, 100);
 	//	gl.glMatrixMode(GL2.GL_PROJECTION);
 	//	gl.glLoadIdentity();
-		// ²Ã¼ôºá×ø±ê
-		gl.glOrtho(0, 200, 0, 100, -100, 100);
+		// è£å‰ªæ¨ªåæ ‡
+	//	gl.glOrtho(0, 100, 0, 100, -100, 100);
 		
 		quad.bl.vertices = new Vec3(10, 10, 1);
 		quad.bl.colors = new Color4B(255, 0, 0, 255);
@@ -76,7 +78,7 @@ public class VBORendererBak implements GLEventListener {
 		
 		//[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -128, 63, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 		
-		// Êı×é£¬°üº¬ÁËmeshArray.length/2¶Ô¶şÎ¬×ø±ê
+		// æ•°ç»„ï¼ŒåŒ…å«äº†meshArray.length/2å¯¹äºŒç»´åæ ‡
 		array = new float[] {
 				10, 10, 1,   1, 0, 0, 1, // red			bl
 				40, 10, 1,   0, 1, 0, 1, // green		br
@@ -91,10 +93,10 @@ public class VBORendererBak implements GLEventListener {
 		};
 		
 		
-		// °ÑÊı×éµÄÔªËØ°´Ë³ĞòÖğ¸ö·Å½øbufferÖĞ
+		// æŠŠæ•°ç»„çš„å…ƒç´ æŒ‰é¡ºåºé€ä¸ªæ”¾è¿›bufferä¸­
 		meshArraybuffer = FloatBuffer.allocate(array.length);
 		
-		// ¶¥µãË÷Òı
+		// é¡¶ç‚¹ç´¢å¼•
 		int[] int_array = {
 			0, 1, 2,
 			3, 2, 1,
@@ -325,6 +327,10 @@ public class VBORendererBak implements GLEventListener {
 		float[] m = new float[16];
         gl.glGetFloatv(GL2.GL_MODELVIEW_MATRIX, m, 0);
         */
+		
+		float[] m = new float[16];
+        gl.glGetFloatv(GL2.GL_MODELVIEW_MATRIX, m, 0);
+		
         float[] matrix = glOrtho(glMatrixLoadIdentity(), 0f, 100f, 0f, 100f, -100f, 100f);
         gl.glUniformMatrix4fv(MVP_MATRIX, 1, false, matrix, 0);
         
@@ -332,15 +338,15 @@ public class VBORendererBak implements GLEventListener {
 	}
 	
 	void setupBuffer(GL2 gl) {
-		// ¿ª±ÙÒ»¸övao
+		// å¼€è¾Ÿä¸€ä¸ªvao
 		gl.glGenVertexArrays(1, quadVAO);
 		gl.glBindVertexArray(quadVAO.get(0));
 		
-		// ¿ª±ÙÒ»¸övbo
+		// å¼€è¾Ÿä¸€ä¸ªvbo
 		gl.glGenBuffers(2, buffersVBO);
-		// °ó¶¨vbosÖĞµÄvbo[0]¶ÔÏó
+		// ç»‘å®švbosä¸­çš„vbo[0]å¯¹è±¡
 		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, buffersVBO.get(0));
-		// °Ñbuffer¿½±´µ½vbo(ÏÔ¿¨)ÖĞ  
+		// æŠŠbufferæ‹·è´åˆ°vbo(æ˜¾å¡)ä¸­  
 		gl.glBufferData(GL2.GL_ARRAY_BUFFER, meshArraybuffer.capacity() * Buffers.SIZEOF_FLOAT,
 				meshArraybuffer, GL2.GL_STATIC_DRAW);
 		
@@ -366,7 +372,7 @@ public class VBORendererBak implements GLEventListener {
 			gl.glVertexAttribPointer(VERTEX_ATTRIB_COLOR, 4, GL2.GL_FLOAT, true, Buffers.SIZEOF_FLOAT * BUFFER_SIZE, 12);
 		}
 		
-		// ¿ª±ÙÒ»¸övio
+		// å¼€è¾Ÿä¸€ä¸ªvio
 		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, buffersVBO.get(1));
 		gl.glBufferData(GL2.GL_ELEMENT_ARRAY_BUFFER, Buffers.SIZEOF_INT * 9, indices, GL2.GL_STATIC_DRAW);
 		
@@ -382,20 +388,30 @@ public class VBORendererBak implements GLEventListener {
 
 	@Override
 	public void display(GLAutoDrawable drawable) {
-		// ´ÓGLAutoDrawable»ñÈ¡GL
+		// ä»GLAutoDrawableè·å–GL
 		final GL2 gl = drawable.getGL().getGL2();
-		// Ìî³ä±³¾°ÑÕÉ«
+		// å¡«å……èƒŒæ™¯é¢œè‰²
 		gl.glClear(GL2.GL_COLOR_BUFFER_BIT);
 		
 		if (gl.glIsTexture(texture)) {
 			gl.glBindTexture(GL2.GL_TEXTURE_2D, texture);
 		}
 		
-		// °ó¶¨vao
+		/*
+		gl.glBegin(GL2.GL_QUADS);
+		
+		gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex3f(-0.5f, -0.5f,  1.0f);
+		gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex3f(-0.5f,  0.5f,  1.0f);
+		gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex3f( 0.5f,  0.5f,  1.0f);
+		gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex3f( 0.5f, -0.5f,  1.0f);
+		
+		gl.glEnd();
+		*/
+		// ç»‘å®švao
 		gl.glBindVertexArray(quadVAO.get(0));
-		// °ó¶¨vbo
+		// ç»‘å®švbo
 		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, buffersVBO.get(0));
-		// Ìá½»Êı¾İ
+		// æäº¤æ•°æ®
 		gl.glBufferData(GL2.GL_ARRAY_BUFFER, meshArraybuffer.capacity() * Buffers.SIZEOF_FLOAT, null, GL2.GL_DYNAMIC_DRAW);
 		ByteBuffer buffer = gl.glMapBuffer(GL2.GL_ARRAY_BUFFER, GL2.GL_WRITE_ONLY);
 		
@@ -409,15 +425,18 @@ public class VBORendererBak implements GLEventListener {
 		}
 		
 		gl.glUnmapBuffer(GL2.GL_ARRAY_BUFFER);
-		// °ó¶¨vio
+		// ç»‘å®švio
 		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, buffersVBO.get(1));
-		// »æÖÆÍ¼ĞÎ
+		// ç»˜åˆ¶å›¾å½¢
 		//gl.glDrawElements(GL2.GL_TRIANGLES, meshArraybuffer.capacity() / BUFFER_SIZE, GL2.GL_UNSIGNED_INT, 0);
 		
 		gl.glDrawElements(GL2.GL_TRIANGLES, 6, GL2.GL_UNSIGNED_INT, 0);
 		
+		if (gl.glGetError() != 0) {
+			System.out.println(gl.glGetError());
+		}
 		
-		// ½â³ı°ó¶¨
+		// è§£é™¤ç»‘å®š
 		gl.glBindVertexArray(0);
 		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, 0);
 		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);

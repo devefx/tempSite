@@ -1,8 +1,10 @@
 package com.devefx.gameengine.base.types;
 
-import com.devefx.gameengine.memory.Struct;
+import java.nio.ByteBuffer;
 
-public class Tex2F extends Struct {
+import com.devefx.gameengine.buffer.OutputBuffer;
+
+public class Tex2F implements OutputBuffer {
 	
 	public float u;
 	public float v;
@@ -13,5 +15,11 @@ public class Tex2F extends Struct {
 	public Tex2F(float u, float v) {
 		this.u = u;
 		this.v = v;
+	}
+
+	@Override
+	public void write(ByteBuffer buffer) {
+		buffer.putFloat(u);
+		buffer.putFloat(v);
 	}
 }

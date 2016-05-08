@@ -1,10 +1,10 @@
 package com.devefx.gameengine.base.types;
 
-import java.nio.Buffer;
+import java.nio.ByteBuffer;
 
-import com.devefx.gameengine.memory.Struct;
+import com.devefx.gameengine.buffer.OutputBuffer;
 
-public class V3F_C4B_T2F extends Struct {
+public class V3F_C4B_T2F implements OutputBuffer {
 	
 	public Vec3 vertices ;		// 12 bytes
 	public Color4B colors;		//  4 bytes
@@ -15,9 +15,9 @@ public class V3F_C4B_T2F extends Struct {
 		colors = new Color4B();
 		texCoords = new Tex2F();
 	}
-	
+
 	@Override
-	public void write(Buffer buffer) {
+	public void write(ByteBuffer buffer) {
 		vertices.write(buffer);
 		colors.write(buffer);
 		texCoords.write(buffer);

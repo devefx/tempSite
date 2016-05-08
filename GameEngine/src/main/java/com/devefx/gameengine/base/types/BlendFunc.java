@@ -1,8 +1,6 @@
 package com.devefx.gameengine.base.types;
 
-import com.devefx.gameengine.memory.Struct;
-
-public class BlendFunc extends Struct {
+public class BlendFunc {
 	
 	public int src;
 	public int dst;

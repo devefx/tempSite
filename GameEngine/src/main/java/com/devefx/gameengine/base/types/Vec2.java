@@ -1,8 +1,10 @@
 package com.devefx.gameengine.base.types;
 
-import com.devefx.gameengine.memory.Struct;
+import java.nio.ByteBuffer;
 
-public class Vec2 extends Struct {
+import com.devefx.gameengine.buffer.OutputBuffer;
+
+public class Vec2 implements OutputBuffer {
 	
 	public float x;
 	public float y;
@@ -41,5 +43,11 @@ public class Vec2 extends Struct {
 	
 	public float length() {
 		return (float) Math.sqrt(x * x + y * y);
+	}
+
+	@Override
+	public void write(ByteBuffer buffer) {
+		buffer.putFloat(x);
+		buffer.putFloat(y);
 	}
 }

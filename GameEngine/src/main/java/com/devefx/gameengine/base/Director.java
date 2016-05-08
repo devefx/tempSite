@@ -1,27 +1,23 @@
 package com.devefx.gameengine.base;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
+import java.util.Stack;
 
-import com.devefx.gameengine.base.types.BlendFunc;
-import com.devefx.gameengine.base.types.Color4B;
 import com.devefx.gameengine.base.types.Size;
-import com.devefx.gameengine.base.types.Tex2F;
-import com.devefx.gameengine.base.types.V3F_C4B_T2F_Quad;
-import com.devefx.gameengine.base.types.Vec3;
+import com.devefx.gameengine.math.Mat4;
 import com.devefx.gameengine.platform.GLView;
 import com.devefx.gameengine.renderer.GLProgram;
-import com.devefx.gameengine.renderer.QuadCommand;
+import com.devefx.gameengine.renderer.GLProgramCache;
 import com.devefx.gameengine.renderer.Renderer;
+import com.devefx.gameengine.ui.Scene;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GLAutoDrawable;
+import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLContext;
 import com.jogamp.opengl.GLEventListener;
-import com.jogamp.opengl.GLException;
-import com.jogamp.opengl.util.texture.Texture;
-import com.jogamp.opengl.util.texture.TextureIO;
+import com.jogamp.opengl.GLProfile;
+import com.jogamp.opengl.awt.GLCanvas;
+import com.jogamp.opengl.util.FPSAnimator;
 
 public class Director {
 
@@ -30,14 +26,28 @@ public class Director {
 	
 	protected Size winSizeInPoints;
 	
+	protected Stack<Scene> scenesStack;
+	protected Scene runningScene;
+	protected Scene nextScene;
+	protected boolean sendCleanupToScene;
+	
+	protected InitializeGame initializeGame;
+	
 	private static Director director;
 	
 	public static Director getInstance() {
 		if (director == null) {
 			director = new Director();
 			director.init();
+			
 		}
 		return director;
+	}
+	
+	public Director() {
+		scenesStack = new Stack<Scene>();
+		nextScene = null;
+		sendCleanupToScene = false;
 	}
 	
 	public boolean init() {
@@ -71,103 +81,111 @@ public class Director {
 	public void setGLDefaultValues() {
 		// TODO Auto-generated method stub
 		
+		
 	}
 	
-	public final GLEventListener glEventListener = new GLEventListener() {
-		@Override
-		public void reshape(GLAutoDrawable drawable, int x, int y, int width,
-				int height) {
+	public void run(InitializeGame init) {
+		assert(init != null);
+		startAnimation();
+		initializeGame = init;
+	}
+	
+	public void runWithScene(Scene scene) {
+		assert(scene != null);
+		assert(runningScene == null);
+		pushScene(scene);
+	}
+	
+	public void pushScene(Scene scene) {
+		
+		sendCleanupToScene = false;
+		
+		scenesStack.push(scene);
+		nextScene = scene;
+	}
+	
+	public void popScene() {
+		scenesStack.pop();
+		int i = scenesStack.size();
+		if (i == 0) {
 			
+		} else {
+			sendCleanupToScene = true;
+			nextScene = scenesStack.get(i - 1);
 		}
-		@Override
-		public void init(GLAutoDrawable drawable) {
-			renderer.initGLView();
-			
-			try {
-				initCreateProgram();
-				renderer.addCommand(createCommand());
-			} catch (Exception e) {
-				e.printStackTrace();
+	}
+	
+	protected void startAnimation() {
+		final FPSAnimator animator = new FPSAnimator(canvas, 60, true);
+		animator.start();
+	}
+	
+	protected void drawScene() {
+		
+		renderer.clear();
+		
+		if (nextScene != null) {
+			setNextScene();
+		}
+		
+		if (runningScene != null) {
+			runningScene.draw(renderer);
+		}
+		
+		renderer.render();
+	}
+	
+	protected void setNextScene() {
+		runningScene = nextScene;
+	}
+	
+	private GLCanvas canvas;
+	public GLCanvas initGLCanvas(int width, int height) {
+		GLCapabilities capabilities = new GLCapabilities(GLProfile.get(GLProfile.GL2));
+		canvas = new GLCanvas(capabilities);
+		canvas.addGLEventListener(new GLEventListener() {
+			@Override
+			public void init(GLAutoDrawable drawable) {
+				renderer.initGLView();
+				try {
+					initCreateProgram();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				initializeGame.init();
 			}
-		}
-		@Override
-		public void dispose(GLAutoDrawable drawable) {
-			
-		}
-		@Override
-		public void display(GLAutoDrawable drawable) {
-			renderer.render();
-		}
-	};
-	
-	
-	public static QuadCommand createCommand() throws GLException, IOException {
-		QuadCommand cmd = new QuadCommand();
-		
-		ClassLoader loader = Thread.currentThread().getContextClassLoader();
-		URL url = loader.getResource("1.jpg");
-		
-		Texture tex = TextureIO.newTexture(new File(url.getPath()), true);
-		int textureID = tex.getTextureObject();
-		
-		V3F_C4B_T2F_Quad quads = new V3F_C4B_T2F_Quad();
-		
-		quads.bl.vertices = new Vec3(10, 10, 1);
-		quads.bl.colors = new Color4B(255, 0, 0, 255);
-		
-		quads.br.vertices = new Vec3(40, 10, 1);
-		quads.br.colors = new Color4B(0, 255, 0, 255);
-		
-		quads.tl.vertices = new Vec3(10, 40, 1);
-		quads.tl.colors = new Color4B(0, 0, 255, 255);
-		
-		quads.tr.vertices = new Vec3(40, 40, 1);
-		quads.tr.colors = new Color4B(255, 255, 0, 255);
-		
-		quads.bl.texCoords = new Tex2F(0, 0);
-		quads.br.texCoords = new Tex2F(1, 0);
-		quads.tl.texCoords = new Tex2F(0, 1);
-		quads.tr.texCoords = new Tex2F(1, 1);
-		
-		cmd.init(0, textureID, new BlendFunc(0, 0), quads);
-		
-		return cmd;
+			@Override
+			public void display(GLAutoDrawable drawable) {
+				drawScene();
+			}
+			@Override
+			public void dispose(GLAutoDrawable drawable) {
+				
+			}
+			@Override
+			public void reshape(GLAutoDrawable drawable, int x, int y, int width,
+					int height) {
+				
+			}
+		});
+		canvas.setIgnoreRepaint(true);
+		canvas.setSize(width, height);
+		return canvas;
+	}
+	public GL2 getGL() {
+		return GLContext.getCurrentGL().getGL2();
 	}
 	
 	static void initCreateProgram() throws IOException {
-		final GL2 gl = GLContext.getCurrentGL().getGL2();
+		final GL2 gl = getInstance().getGL();
 		
-		GLProgram glProgram = new GLProgram();
-		String vertexShaderString = readFile("shader_PositionTextureColor.vert");
-		String fragmentShaderString = readFile("shader_PositionTextureColor.frag");
+		GLProgramCache glProgramCache = GLProgramCache.getInstance();
+		GLProgram glProgram = glProgramCache.getGLProgram(GLProgram.SHADER_NAME_POSITION_TEXTURE);
+		glProgram.use();
 		
-		if (gl.isGL3core()) {
-			vertexShaderString = "#version 130\n"+vertexShaderString;
-            fragmentShaderString = "#version 130\n"+fragmentShaderString;
-		}
-		
-		if (glProgram.init(vertexShaderString, fragmentShaderString)) {
-			glProgram.link();
-			glProgram.use();
-		}
-		
-		float[] matrix = {
-				0.02f,  0.0f,   0.0f, 0.0f,
-				 0.0f, 0.02f,   0.0f, 0.0f,
-				 0.0f,  0.0f, -0.01f, 0.0f,
-				-1.0f, -1.0f,   0.0f, 1.0f
-			};
-		gl.glUniformMatrix4fv(GLProgram.UNIFORM_AMBIENT_COLOR, 1, false, matrix, 0);
-		
-		System.out.println(gl.glGetError());
+		Mat4 mat4 = new Mat4();
+        Mat4.createOrthographicOffCenter(0, 800, 0, 600, -1024, 1024, mat4);
+		int location = gl.glGetUniformLocation(glProgram.getProgram(), "CC_MVPMatrix");
+		gl.glUniformMatrix4fv(location, 1, false, mat4.m, 0);
 	}
-	
-	public static String readFile(String filename) throws IOException {
-		ClassLoader loader = Thread.currentThread().getContextClassLoader();
-		InputStream is = loader.getResourceAsStream(filename);
-		byte[] buf = new byte[is.available()];
-		is.read(buf);
-		return new String(buf);
-	}
-	
 }

@@ -25,7 +25,7 @@ public class OpenGLTest {
 		GLWindow window = GLWindow.create(capabilities);
 		window.setSize(800, 600);
 		window.setTitle("OpenGL");
-		window.addGLEventListener(new VBORendererBak());
+		window.addGLEventListener(new Triangle());
 		window.setVisible(true);
 		
 		

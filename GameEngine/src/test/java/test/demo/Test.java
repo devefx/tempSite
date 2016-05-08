@@ -1,6 +1,7 @@
-package test;
+package test.demo;
 
 import com.devefx.gameengine.base.Director;
+import com.devefx.gameengine.base.InitializeGame;
 import com.devefx.gameengine.base.types.Rect;
 import com.devefx.gameengine.platform.GLView;
 import com.devefx.gameengine.platform.desktop.GLViewImpl;
@@ -9,7 +10,7 @@ public class Test {
 	
 	public static void main(String[] args) throws Exception {
 		
-		Director director = Director.getInstance();
+		final Director director = Director.getInstance();
 		
 		GLView glView = director.getOpenGLView();
 		
@@ -21,6 +22,13 @@ public class Test {
 		}
 		
 		glView.setDesignResolutionSize(800, 600);
+		
+		director.run(new InitializeGame() {
+			@Override
+			public void init() {
+				director.runWithScene(new FirstScene());
+			}
+		});
 	}
 	
 }

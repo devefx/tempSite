@@ -19,6 +19,9 @@ public class Renderer implements GLEventListener {
 	protected float rtri = 0f;
 	
 	public void init(GLAutoDrawable drawable) {
+		if (rtri == 0) {
+			return;
+		}
 		final GL2 gl = drawable.getGL().getGL2();
 		
 		/*gl.glShadeModel(GL2.GL_SMOOTH);
@@ -30,7 +33,7 @@ public class Renderer implements GLEventListener {
 		gl.glEnable(GL2.GL_TEXTURE_2D);
 		try {
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-			InputStream inputStream = new FileInputStream("f:\\1.jpg");
+			InputStream inputStream = getClass().getClassLoader().getResourceAsStream("1.jpg");
 			byte[] buff = new byte[1024];
 			int len = 0;
 			while ((len = inputStream.read(buff)) > 0) {
@@ -54,37 +57,42 @@ public class Renderer implements GLEventListener {
 	public void display(GLAutoDrawable drawable) {
 		// Generating GL object
 		final GL2 gl = drawable.getGL().getGL2();
-		// Çå³ýÑÕÉ«»º´æºÍÉî¶È»º´æ
-		gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
-		// ¸´Î»
-		gl.glLoadIdentity();
-		// Ðý×ª
+		// ï¿½ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È»ï¿½ï¿½ï¿½
+		//gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
+		// ï¿½ï¿½Î»
+	//	gl.glLoadIdentity();
+		// ï¿½ï¿½×ª
 		//gl.glRotatef(rtri, 1.0f, 1.0f, 0.0f);
-		// »æÖÆÍ¼Ôª
-		gl.glViewport(0, 0, 400, 400);
-		gl.glBindTexture(GL2.GL_TEXTURE_2D, texture);
+		// ï¿½ï¿½ï¿½ï¿½Í¼Ôª
+//		gl.glViewport(0, 0, 400, 400);
+		//gl.glBindTexture(GL2.GL_TEXTURE_2D, texture);
 		gl.glBegin(GL2.GL_QUADS);
 		
-		gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex3f(-1.0f, -1.0f,  1.0f); // ×óÏÂ½Ç
-		gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex3f(-1.0f,  1.0f,  1.0f); // ×óÉÏ½Ç
-		gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex3f( 1.0f,  1.0f,  1.0f); // ÓÒÉÏ½Ç
-		gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex3f( 1.0f, -1.0f,  1.0f); // ÓÒÏÂ½Ç
+		gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex3f(-0.5f, -0.5f,  1.0f); // ï¿½ï¿½ï¿½Â½ï¿½
+		gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex3f(-0.5f,  0.5f,  1.0f); // ï¿½ï¿½ï¿½Ï½ï¿½
+		gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex3f( 0.5f,  0.5f,  1.0f); // ï¿½ï¿½ï¿½Ï½ï¿½
+		gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex3f( 0.5f, -0.5f,  1.0f); // ï¿½ï¿½ï¿½Â½ï¿½
 		
 		gl.glEnd();
+		
+		gl.glFlush();
+		if (rtri == 0) {
+			return;
+		}
 		
 		gl.glViewport(200, 200, 400, 400);
 		gl.glBegin(GL2.GL_QUADS);
 		
-		gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex3f(-1.0f, -1.0f,  1.0f); // ×óÏÂ½Ç
-		gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex3f(-1.0f,  1.0f,  1.0f); // ×óÉÏ½Ç
-		gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex3f( 1.0f,  1.0f,  1.0f); // ÓÒÉÏ½Ç
-		gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex3f( 1.0f, -1.0f,  1.0f); // ÓÒÏÂ½Ç
+		gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex3f(-1.0f, -1.0f,  1.0f); // ï¿½ï¿½ï¿½Â½ï¿½
+		gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex3f(-1.0f,  1.0f,  1.0f); // ï¿½ï¿½ï¿½Ï½ï¿½
+		gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex3f( 1.0f,  1.0f,  1.0f); // ï¿½ï¿½ï¿½Ï½ï¿½
+		gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex3f( 1.0f, -1.0f,  1.0f); // ï¿½ï¿½ï¿½Â½ï¿½
 		
 		gl.glEnd();
 		
 		gl.glFlush();
 		
-		// µÆ¹â
+		// ï¿½Æ¹ï¿½
 		gl.glEnable(GL2.GL_LIGHTING);
 		gl.glEnable(GL2.GL_LIGHT0);
 		gl.glEnable(GL2.GL_NORMALIZE);
@@ -98,7 +106,9 @@ public class Renderer implements GLEventListener {
 
 	public void reshape(GLAutoDrawable drawable, int x, int y, int width,
 			int height) {
-		
+		if (rtri == 0) {
+			return;
+		}
 		if (height < 1) {
 			height = 1;
 		}
