@@ -5,10 +5,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.devefx.gameengine.base.Director;
 import com.devefx.gameengine.base.types.Size;
+import com.devefx.gameengine.renderer.GLStateCache.GL;
 import com.jogamp.common.util.IOUtil;
-import com.jogamp.opengl.GL;
+import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureData;
 import com.jogamp.opengl.util.texture.TextureIO;
@@ -23,7 +23,7 @@ public class Texture2D {
 		if (data != null) {
 			InputStream in = new ByteArrayInputStream(data);
 			try {
-				final GL gl = Director.getInstance().getGL();
+				final GL2 gl = GL.getGL();
 				final TextureData textureData = TextureIO.newTextureData(gl.getGLProfile(), in,
 						false, fileSuffix);
 				updateTexture(TextureIO.newTexture(gl, textureData));
@@ -48,7 +48,7 @@ public class Texture2D {
 	public boolean initWithFile(File file) {
 		if (file != null) {
 			try {
-		        final GL gl = Director.getInstance().getGL();
+		        final GL2 gl = GL.getGL();
 		        final TextureData data = TextureIO.newTextureData(gl.getGLProfile(), file,
 		        		false, IOUtil.getFileSuffix(file));
 				updateTexture(TextureIO.newTexture(gl, data));
@@ -71,7 +71,7 @@ public class Texture2D {
 	
 	public void release() {
 		if (name != 0) {
-			Renderer.gl.glDeleteTextures(1, new int[] {name}, 0);
+			GL.deleteTexture(name);
 			name = 0;
 		}
 	}
@@ -90,6 +90,6 @@ public class Texture2D {
 			name = texture.getTextureObject();
 			size = new Size(texture.getWidth(), texture.getHeight());
 		}
-		setGLProgram(GLProgramCache.getInstance().getGLProgram(GLProgram.SHADER_NAME_POSITION_TEXTURE));
+		setGLProgram(GLProgramCache.getInstance().getGLProgram(GLProgram.SHADER_NAME_POSITION_TEXTURE_COLOR_NO_MVP));
 	}
 }

@@ -148,13 +148,6 @@ public class OpenGLWindow {
 				glProgram.use();
 			}
 			
-			float[] matrix = {
-					0.02f,  0.0f,   0.0f, 0.0f,
-					 0.0f, 0.02f,   0.0f, 0.0f,
-					 0.0f,  0.0f, -0.01f, 0.0f,
-					-1.0f, -1.0f,   0.0f, 1.0f
-				};
-			
 			gl.glOrtho(0, 800, 0, 600, -1024, 1024);
 			
 			float[] m = new float[16];

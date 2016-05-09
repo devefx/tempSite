@@ -5,10 +5,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.devefx.gameengine.base.Director;
+import com.devefx.gameengine.base.Director.MatrixStackType;
 import com.devefx.gameengine.math.Mat4;
+import com.devefx.gameengine.renderer.GLStateCache.GL;
 import com.devefx.gameengine.resources.Resources;
 import com.jogamp.opengl.GL2;
-import com.jogamp.opengl.GLContext;
 
 public class GLProgram {
 	
@@ -16,11 +17,13 @@ public class GLProgram {
 	protected int vertexShader;
 	protected int fragmentShader;
 	
+	protected int[] builtInUniforms;
 	protected Map<String, VertexAttrib> vertexAttribs;
 	protected Map<String, Uniform> userUniforms;
-	protected int[] builtInUniforms;
 	
 	protected UniformFlag flag = new UniformFlag();
+	
+	protected Map<Integer, Object> hashForUniforms;
 	
 	protected Director director;
 	
@@ -49,16 +52,18 @@ public class GLProgram {
 		vertexShader = 0;
 		fragmentShader = 0;
 		
+		builtInUniforms = new int[UNIFORM_MAX];
 		vertexAttribs = new HashMap<String, GLProgram.VertexAttrib>();
 		userUniforms = new HashMap<String, GLProgram.Uniform>();
-		builtInUniforms = new int[UNIFORM_MAX];
+		
+		hashForUniforms = new HashMap<Integer, Object>();
 		
 		director = Director.getInstance();
 		assert(director != null);
 	}
 	
 	public boolean initWithString(String vShaderString, String fShaderString) {
-		final GL2 gl = GLContext.getCurrentGL().getGL2();
+		final GL2 gl = GL.getGL();
 		program = gl.glCreateProgram();
 		if (vShaderString != null) {
 			if (!compileShader(GL2.GL_VERTEX_SHADER, vShaderString)) {
@@ -74,6 +79,8 @@ public class GLProgram {
 		}
 		gl.glAttachShader(program, vertexShader);
         gl.glAttachShader(program, fragmentShader);
+        
+        hashForUniforms.clear();
 		return true;
 	}
 	
@@ -88,7 +95,7 @@ public class GLProgram {
 	}
 
 	protected void bindPredefinedVertexAttribs() {
-		final GL2 gl = GLContext.getCurrentGL().getGL2();
+		final GL2 gl = GL.getGL();
 		gl.glBindAttribLocation(program, VERTEX_ATTRIB_POSITION, ATTRIBUTE_NAME_POSITION);
 		gl.glBindAttribLocation(program, VERTEX_ATTRIB_COLOR, ATTRIBUTE_NAME_COLOR);
 		gl.glBindAttribLocation(program, VERTEX_ATTRIB_TEX_COORD, ATTRIBUTE_NAME_TEX_COORD);
@@ -101,7 +108,7 @@ public class GLProgram {
 	}
 	
 	protected void parseVertexAttribs() {
-		final GL2 gl = director.getGL();
+		final GL2 gl = GL.getGL();
 		
 		int[] activeAttributes = new int[1];
 		gl.glGetProgramiv(program, GL2.GL_ACTIVE_ATTRIBUTES, activeAttributes, 0);
@@ -113,13 +120,13 @@ public class GLProgram {
 				int[] lengthAndSizeAndType = new int[3];
 				for (int i = 0; i < activeAttributes[0]; i++) {
 					gl.glGetActiveAttrib(program, i, length[0], lengthAndSizeAndType, 0, lengthAndSizeAndType, 1, lengthAndSizeAndType, 2, attrName, 0);
+					VertexAttrib vertexAttrib = new VertexAttrib();
+					vertexAttrib.size = lengthAndSizeAndType[1];
+					vertexAttrib.type = lengthAndSizeAndType[2];
+					vertexAttrib.name = new String(attrName, 0, lengthAndSizeAndType[0]);
+					vertexAttrib.index = gl.glGetAttribLocation(program, vertexAttrib.name);
+					vertexAttribs.put(vertexAttrib.name, vertexAttrib);
 				}
-				VertexAttrib vertexAttrib = new VertexAttrib();
-				vertexAttrib.size = lengthAndSizeAndType[1];
-				vertexAttrib.type = lengthAndSizeAndType[2];
-				vertexAttrib.name = new String(attrName, 0, lengthAndSizeAndType[0]);
-				vertexAttrib.index = gl.glGetAttribLocation(program, vertexAttrib.name);
-				vertexAttribs.put(vertexAttrib.name, vertexAttrib);
 			}
 		} else {
 			int[] length = new int[1];
@@ -130,7 +137,7 @@ public class GLProgram {
 	}
 	
 	protected void parseUniforms() {
-		final GL2 gl = director.getGL();
+		final GL2 gl = GL.getGL();
 		
 		int[] activeUniforms = new int[1];
 		gl.glGetProgramiv(program, GL2.GL_ACTIVE_UNIFORMS, activeUniforms, 0);
@@ -177,7 +184,7 @@ public class GLProgram {
 	}
 	
 	protected boolean compileShader(int type, String source) {
-		final GL2 gl = GLContext.getCurrentGL().getGL2();
+		final GL2 gl = GL.getGL();
 		String[] sources = {
 				"uniform mat4 CC_PMatrix;\n" +
 		        "uniform mat4 CC_MVMatrix;\n" +
@@ -215,16 +222,13 @@ public class GLProgram {
 	}
 
 	public int getAttribLocation(String attributName) {
-		GL2 gl = director.getGL();
-		return gl.glGetAttribLocation(program, attributName);
+		return GL.getGL().glGetAttribLocation(program, attributName);
 	}
 	public int getUniformLocation(String uniformName) {
-		GL2 gl = director.getGL();
-		return gl.glGetUniformLocation(program, uniformName);
+		return GL.getGL().glGetUniformLocation(program, uniformName);
 	}
 	public void bindAttribLocation(String attributeName, int index) {
-		GL2 gl = director.getGL();
-		gl.glBindAttribLocation(program, index, attributeName);
+		GL.getGL().glBindAttribLocation(program, index, attributeName);
 	}
 	public void updateUniforms() {
 		builtInUniforms[UNIFORM_AMBIENT_COLOR] = getUniformLocation(UNIFORM_NAME_AMBIENT_COLOR);
@@ -254,14 +258,23 @@ public class GLProgram {
 	    flag.usesRandom = builtInUniforms[UNIFORM_RANDOM01] != -1;
 	    
 	    this.use();
-	}
-	
-	public void setUniformsForBuiltins(Mat4 matrixMV) {
-		// TODO
+	    
+	    if (builtInUniforms[UNIFORM_SAMPLER0] != -1) {
+	    	setUniformLocationWith1i(builtInUniforms[UNIFORM_SAMPLER0], 0);
+		}
+	    if (builtInUniforms[UNIFORM_SAMPLER1] != -1) {
+	    	setUniformLocationWith1i(builtInUniforms[UNIFORM_SAMPLER1], 1);
+	    }
+	    if (builtInUniforms[UNIFORM_SAMPLER2] != -1) {
+	    	setUniformLocationWith1i(builtInUniforms[UNIFORM_SAMPLER2], 2);
+	    }
+	    if (builtInUniforms[UNIFORM_SAMPLER3] != -1) {
+	    	setUniformLocationWith1i(builtInUniforms[UNIFORM_SAMPLER3], 3);
+	    }
 	}
 	
 	public void link() {
-		final GL2 gl = GLContext.getCurrentGL().getGL2();
+		GL2 gl = GL.getGL();
 		
 		bindPredefinedVertexAttribs();
 		
@@ -281,8 +294,90 @@ public class GLProgram {
 	}
 	
 	public void use() {
-		final GL2 gl = director.getGL();
-		gl.glUseProgram(program);
+		GL.useProgram(program);
+	}
+	
+	public boolean updateUniformLocation(int location, Object data) {
+		if (location > -1) {
+			Object element = hashForUniforms.get(location);
+			if (element != data) {
+				hashForUniforms.put(location, data);
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public void setUniformLocationWith1i(int location, int i1) {
+		if (updateUniformLocation(location, i1)) {
+			GL.getGL().glUniform1i(location, i1);
+		}
+	}
+	
+	public void setUniformLocationWith1f(int location, float f1) {
+		if (updateUniformLocation(location, f1)) {
+			GL.getGL().glUniform1f(location, f1);
+		}
+	}
+	
+	public void setUniformLocationWith2f(int location, float f1, float f2) {
+		if (updateUniformLocation(location, new float[] { f1, f2 })) {
+			GL.getGL().glUniform2f(location, f1, f2);
+		}
+	}
+	
+	public void setUniformLocationWith3f(int location, float f1, float f2, float f3) {
+		if (updateUniformLocation(location, new float[] { f1, f2, f3 })) {
+			GL.getGL().glUniform3f(location, f1, f2, f3);
+		}
+	}
+	
+	public void setUniformLocationWith4f(int location, float f1, float f2, float f3, float f4) {
+		if (updateUniformLocation(location, new float[] { f1, f2, f3, f4 })) {
+			GL.getGL().glUniform4f(location, f1, f2, f3, f4);
+		}
+	}
+	
+	public void setUniformLocationWithMatrix3fv(int location, float[] matrixArray, int numberOfMatrices) {
+		if (updateUniformLocation(location, matrixArray)) {
+			GL.getGL().glUniformMatrix3fv(location, numberOfMatrices, false, matrixArray, 0);
+		}
+	}
+	
+	public void setUniformLocationWithMatrix4fv(int location, float[] matrixArray, int numberOfMatrices) {
+		if (updateUniformLocation(location, matrixArray)) {
+			GL.getGL().glUniformMatrix4fv(location, numberOfMatrices, false, matrixArray, 0);
+		}
+	}
+	
+	public void setUniformsForBuiltins() {
+		setUniformsForBuiltins(director.getMatrix(MatrixStackType.MATRIX_STACK_MODELVIEW));
+	}
+	
+	public void setUniformsForBuiltins(Mat4 matrixMV) {
+		Mat4 matrixP = director.getMatrix(MatrixStackType.MATRIX_STACK_PROJECTION);
+		if(flag.usesP) {
+			setUniformLocationWithMatrix4fv(builtInUniforms[UNIFORM_P_MATRIX], matrixP.m, 1);
+		}
+		if(flag.usesMV) {
+			setUniformLocationWithMatrix4fv(builtInUniforms[UNIFORM_MV_MATRIX], matrixMV.m, 1);
+		}
+		if(flag.usesMVP) {
+			Mat4 matrixMVP = Mat4.multiplyMatrix(matrixP, matrixMV);
+			setUniformLocationWithMatrix4fv(builtInUniforms[UNIFORM_MVP_MATRIX], matrixMVP.m, 1);
+		}
+		
+		if (flag.usesNormal) {
+			// TODO
+		}
+		
+		if (flag.usesTime) {
+			// TODO
+		}
+		
+		if (flag.usesRandom) {
+			// TODO
+		}
 	}
 	
 	public void reset() {
@@ -290,6 +385,7 @@ public class GLProgram {
 		vertexShader = 0;
 		fragmentShader = 0;
 		builtInUniforms = new int[UNIFORM_MAX];
+		hashForUniforms.clear();
 	}
 	
 	public class VertexAttrib {
@@ -316,19 +412,8 @@ public class GLProgram {
 	}
 	// Shader name
 	public static final String SHADER_NAME_POSITION_TEXTURE_COLOR = "ShaderPositionTextureColor";
-	
+	public static final String SHADER_NAME_POSITION_TEXTURE_COLOR_NO_MVP = "ShaderPositionTextureColor_noMVP";
 	public static final String SHADER_NAME_POSITION_TEXTURE = "ShaderPositionTexture";
-	
-	// Vertex attribute
-	public static final int VERTEX_ATTRIB_POSITION = 0;
-	public static final int VERTEX_ATTRIB_COLOR = 1;
-	public static final int VERTEX_ATTRIB_TEX_COORD = 2;
-	public static final int VERTEX_ATTRIB_TEX_COORD1 = 3;
-	public static final int VERTEX_ATTRIB_TEX_COORD2 = 4;
-	public static final int VERTEX_ATTRIB_TEX_COORD3 = 5;
-	public static final int VERTEX_ATTRIB_NORMAL = 6;
-	public static final int VERTEX_ATTRIB_BLEND_WEIGHT = 7;
-	public static final int VERTEX_ATTRIB_BLEND_INDEX = 8;
 	
 	// Uniform handle
 	public static final int UNIFORM_AMBIENT_COLOR = 0;
@@ -372,7 +457,17 @@ public class GLProgram {
     public static final String UNIFORM_NAME_SAMPLER2 = "CC_Texture2";
     public static final String UNIFORM_NAME_SAMPLER3 = "CC_Texture3";
     
-    
+	// Vertex attribute
+	public static final int VERTEX_ATTRIB_POSITION = 0;
+	public static final int VERTEX_ATTRIB_COLOR = 1;
+	public static final int VERTEX_ATTRIB_TEX_COORD = 2;
+	public static final int VERTEX_ATTRIB_TEX_COORD1 = 3;
+	public static final int VERTEX_ATTRIB_TEX_COORD2 = 4;
+	public static final int VERTEX_ATTRIB_TEX_COORD3 = 5;
+	public static final int VERTEX_ATTRIB_NORMAL = 6;
+	public static final int VERTEX_ATTRIB_BLEND_WEIGHT = 7;
+	public static final int VERTEX_ATTRIB_BLEND_INDEX = 8;
+	
     /**Attribute color.*/
     public static final String ATTRIBUTE_NAME_COLOR = "a_color";
     /**Attribute position.*/

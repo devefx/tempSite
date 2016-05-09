@@ -7,6 +7,9 @@ import com.devefx.gameengine.base.types.Rect;
 import com.devefx.gameengine.base.types.Tex2F;
 import com.devefx.gameengine.base.types.V3F_C4B_T2F_Quad;
 import com.devefx.gameengine.base.types.Vec3;
+import com.devefx.gameengine.math.Mat4;
+import com.devefx.gameengine.renderer.GLProgram;
+import com.devefx.gameengine.renderer.GLProgramState;
 import com.devefx.gameengine.renderer.QuadCommand;
 import com.devefx.gameengine.renderer.Renderer;
 import com.devefx.gameengine.renderer.Texture2D;
@@ -14,7 +17,9 @@ import com.devefx.gameengine.renderer.Texture2D;
 public class Sprite extends Node {
 
 	private V3F_C4B_T2F_Quad quad;
+	private BlendFunc blendFunc;
 	private Texture2D texture;
+	private QuadCommand quadCommand;
 	
 	public Sprite() {
 		quad = new V3F_C4B_T2F_Quad();
@@ -42,10 +47,14 @@ public class Sprite extends Node {
 	}
 	
 	public boolean initWithTexture(Texture2D texture, Rect rect) {
+		blendFunc = BlendFunc.ALPHA_PREMULTIPLIED;
+		
 		quad.bl.colors = Color4B.WHITE;
 		quad.br.colors = Color4B.WHITE;
 		quad.tl.colors = Color4B.WHITE;
 		quad.tr.colors = Color4B.WHITE;
+		
+		setGLProgramState(GLProgramState.getOrCreateWithGLProgramName(GLProgram.SHADER_NAME_POSITION_TEXTURE_COLOR_NO_MVP));
 		
 		setTexture(texture);
 		setTextureRect(rect);
@@ -76,10 +85,10 @@ public class Sprite extends Node {
 	}
 	
 	@Override
-	public void draw(Renderer renderer) {
+	public void draw(Renderer renderer, Mat4 transform) {
 		try {
 			QuadCommand cmd = new QuadCommand();
-			cmd.init(globalOrder, texture.getName(), new BlendFunc(0, 0), quad);
+			cmd.init(globalOrder, texture.getName(), getGLProgramState(), blendFunc, transform, quad);
 			renderer.addCommand(cmd);
 		} catch (Exception e) {
 			e.printStackTrace();

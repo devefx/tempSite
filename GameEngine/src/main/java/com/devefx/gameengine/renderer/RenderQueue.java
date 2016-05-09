@@ -6,8 +6,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
-import com.jogamp.opengl.GL;
-import com.jogamp.opengl.GLContext;
+import com.devefx.gameengine.renderer.GLStateCache.GL;
+import com.jogamp.opengl.GL2;
 
 public class RenderQueue {
 
@@ -57,23 +57,23 @@ public class RenderQueue {
 	}
 	
 	public void saveRenderState() {
-		final GL gl = GLContext.getCurrentGL().getGL2();
-		isCullEnabled = gl.glIsEnabled(GL.GL_CULL_FACE);
-		isDepthEnabled = gl.glIsEnabled(GL.GL_DEPTH_TEST);
-		gl.glGetBooleanv(GL.GL_DEPTH_WRITEMASK, isDepthWrite, 0);
+		final GL2 gl = GL.getGL();
+		isCullEnabled = gl.glIsEnabled(GL2.GL_CULL_FACE);
+		isDepthEnabled = gl.glIsEnabled(GL2.GL_DEPTH_TEST);
+		gl.glGetBooleanv(GL2.GL_DEPTH_WRITEMASK, isDepthWrite, 0);
 	}
 	
 	public void restoreRenderState() {
-		final GL gl = GLContext.getCurrentGL().getGL2();
+		final GL2 gl = GL.getGL();
 		if (isCullEnabled) {
-			gl.glEnable(GL.GL_CULL_FACE);
+			gl.glEnable(GL2.GL_CULL_FACE);
 		} else {
-			gl.glDisable(GL.GL_CULL_FACE);
+			gl.glDisable(GL2.GL_CULL_FACE);
 		}
 		if (isDepthEnabled) {
-			gl.glEnable(GL.GL_DEPTH_TEST);
+			gl.glEnable(GL2.GL_DEPTH_TEST);
 		} else {
-			gl.glDisable(GL.GL_DEPTH_TEST);
+			gl.glDisable(GL2.GL_DEPTH_TEST);
 		}
 		gl.glDepthMask(isDepthWrite[0] != 0);
 	}

@@ -27,6 +27,11 @@ public class GLProgramCache {
 		loadDefaultGLProgram(program, ShaderType.PositionTextureColor);
 		programs.put(GLProgram.SHADER_NAME_POSITION_TEXTURE_COLOR, program);
 		
+	    // Position Texture Color without MVP shader
+		program = new GLProgram();
+	    loadDefaultGLProgram(program, ShaderType.PositionTextureColorNoMVP);
+	    programs.put(GLProgram.SHADER_NAME_POSITION_TEXTURE_COLOR_NO_MVP, program);
+		
 	    // Position Texture shader
 		program = new GLProgram();
 	    loadDefaultGLProgram(program, ShaderType.PositionTexture);
@@ -51,6 +56,9 @@ public class GLProgramCache {
 		case PositionTextureColor:
 			program.initWithFilename(Shader.POSITION_TEXTURE_COLOR_VERT, Shader.POSITION_TEXTURE_COLOR_FRAG);
 			break;
+		case PositionTextureColorNoMVP:
+			program.initWithFilename(Shader.POSITION_TEXTURE_COLOR_NO_MVP_VERT, Shader.POSITION_TEXTURE_COLOR_NO_MVP_FRAG);
+			break;
 		case PositionTexture:
 			program.initWithFilename(Shader.POSITION_TEXTURE_VERT, Shader.POSITION_TEXTURE_FRAG);
 			break;
@@ -61,6 +69,7 @@ public class GLProgramCache {
 	
 	enum ShaderType {
 		PositionTextureColor,
+		PositionTextureColorNoMVP,
 		PositionTexture
 	}
 }

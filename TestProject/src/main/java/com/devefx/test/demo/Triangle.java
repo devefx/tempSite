@@ -95,7 +95,7 @@ public class Triangle implements GLEventListener {
 		
 		try {
 			GLProgram glProgram = new GLProgram();
-			glProgram.init(readFile("test.vert"), readFile("test.frag"));
+			glProgram.initWithFilename("test.vert", "test.frag");
 			glProgram.link();
 			glProgram.use();
 			

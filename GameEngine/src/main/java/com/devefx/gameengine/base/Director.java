@@ -1,26 +1,26 @@
 package com.devefx.gameengine.base;
 
-import java.io.IOException;
 import java.util.Stack;
 
+import com.devefx.gameengine.base.types.Color4F;
 import com.devefx.gameengine.base.types.Size;
 import com.devefx.gameengine.math.Mat4;
 import com.devefx.gameengine.platform.GLView;
-import com.devefx.gameengine.renderer.GLProgram;
-import com.devefx.gameengine.renderer.GLProgramCache;
+import com.devefx.gameengine.renderer.GLStateCache.GL;
 import com.devefx.gameengine.renderer.Renderer;
 import com.devefx.gameengine.ui.Scene;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GLAutoDrawable;
-import com.jogamp.opengl.GLCapabilities;
-import com.jogamp.opengl.GLContext;
 import com.jogamp.opengl.GLEventListener;
-import com.jogamp.opengl.GLProfile;
-import com.jogamp.opengl.awt.GLCanvas;
-import com.jogamp.opengl.util.FPSAnimator;
 
 public class Director {
 
+	protected Stack<Mat4> modelViewMatrixStack;
+	protected Stack<Mat4> projectionMatrixStack;
+	protected Stack<Mat4> textureMatrixStack;
+	
+	protected Projection projection;
+	
 	protected GLView openGLView;
 	protected Renderer renderer;
 	
@@ -31,7 +31,8 @@ public class Director {
 	protected Scene nextScene;
 	protected boolean sendCleanupToScene;
 	
-	protected InitializeGame initializeGame;
+	protected EventListener listener;
+	protected boolean dirty;
 	
 	private static Director director;
 	
@@ -44,7 +45,15 @@ public class Director {
 		return director;
 	}
 	
+	public void setListener(EventListener listener) {
+		this.listener = listener;
+	}
+	
 	public Director() {
+		modelViewMatrixStack = new Stack<Mat4>();
+		projectionMatrixStack = new Stack<Mat4>();
+		textureMatrixStack = new Stack<Mat4>();
+		
 		scenesStack = new Stack<Scene>();
 		nextScene = null;
 		sendCleanupToScene = false;
@@ -52,6 +61,8 @@ public class Director {
 	
 	public boolean init() {
 		renderer = new Renderer();
+		
+		initMatrixStack();
 		
 		return true;
 	}
@@ -63,8 +74,11 @@ public class Director {
 			
 			if (openGLView != null) {
 				winSizeInPoints = openGLView.getDesignResolutionSize();
-				setGLDefaultValues();
+				
+				//setGLDefaultValues();
 			}
+			setDirty(true);
+			//renderer.initGLView();
 		}
 	}
 	
@@ -79,15 +93,20 @@ public class Director {
 	}
 	
 	public void setGLDefaultValues() {
-		// TODO Auto-generated method stub
-		
-		
+		setAlphaBlending(true);
+		setDepthTest(false);
+		setProjection(Projection._2D);
 	}
 	
-	public void run(InitializeGame init) {
-		assert(init != null);
-		startAnimation();
-		initializeGame = init;
+	public Size getWinSize() {
+		return winSizeInPoints;
+	}
+	
+	public Size getVisibleSize() {
+		if (openGLView != null) {
+			return openGLView.getVisibleSize();
+		}
+		return Size.ZERO;
 	}
 	
 	public void runWithScene(Scene scene) {
@@ -115,11 +134,6 @@ public class Director {
 		}
 	}
 	
-	protected void startAnimation() {
-		final FPSAnimator animator = new FPSAnimator(canvas, 60, true);
-		animator.start();
-	}
-	
 	protected void drawScene() {
 		
 		renderer.clear();
@@ -128,64 +142,200 @@ public class Director {
 			setNextScene();
 		}
 		
+		pushMatrix(MatrixStackType.MATRIX_STACK_MODELVIEW);
+		
 		if (runningScene != null) {
-			runningScene.draw(renderer);
+			runningScene.render(renderer);
 		}
 		
 		renderer.render();
+		
+		popMatrix(MatrixStackType.MATRIX_STACK_MODELVIEW);
 	}
 	
 	protected void setNextScene() {
 		runningScene = nextScene;
 	}
 	
-	private GLCanvas canvas;
-	public GLCanvas initGLCanvas(int width, int height) {
-		GLCapabilities capabilities = new GLCapabilities(GLProfile.get(GLProfile.GL2));
-		canvas = new GLCanvas(capabilities);
-		canvas.addGLEventListener(new GLEventListener() {
-			@Override
-			public void init(GLAutoDrawable drawable) {
-				renderer.initGLView();
-				try {
-					initCreateProgram();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				initializeGame.init();
-			}
-			@Override
-			public void display(GLAutoDrawable drawable) {
-				drawScene();
-			}
-			@Override
-			public void dispose(GLAutoDrawable drawable) {
-				
-			}
-			@Override
-			public void reshape(GLAutoDrawable drawable, int x, int y, int width,
-					int height) {
-				
-			}
-		});
-		canvas.setIgnoreRepaint(true);
-		canvas.setSize(width, height);
-		return canvas;
-	}
-	public GL2 getGL() {
-		return GLContext.getCurrentGL().getGL2();
+	
+	
+	//
+	// FIXME TODO
+	// Matrix code MUST NOT be part of the Director
+	// MUST BE moved outide.
+	// Why the Director must have this code ?
+	//
+	public void initMatrixStack() {
+		modelViewMatrixStack.clear();
+		projectionMatrixStack.clear();
+		textureMatrixStack.clear();
+		
+		modelViewMatrixStack.push(new Mat4());
+		projectionMatrixStack.push(new Mat4());
+		textureMatrixStack.push(new Mat4());
 	}
 	
-	static void initCreateProgram() throws IOException {
-		final GL2 gl = getInstance().getGL();
-		
-		GLProgramCache glProgramCache = GLProgramCache.getInstance();
-		GLProgram glProgram = glProgramCache.getGLProgram(GLProgram.SHADER_NAME_POSITION_TEXTURE);
-		glProgram.use();
-		
-		Mat4 mat4 = new Mat4();
-        Mat4.createOrthographicOffCenter(0, 800, 0, 600, -1024, 1024, mat4);
-		int location = gl.glGetUniformLocation(glProgram.getProgram(), "CC_MVPMatrix");
-		gl.glUniformMatrix4fv(location, 1, false, mat4.m, 0);
+	public void popMatrix(MatrixStackType type) {
+		switch (type) {
+		case MATRIX_STACK_MODELVIEW:
+			modelViewMatrixStack.pop();
+			return;
+		case MATRIX_STACK_PROJECTION:
+			projectionMatrixStack.pop();
+			return;
+		case MATRIX_STACK_TEXTURE:
+			textureMatrixStack.pop();
+			return;
+		}
+		throw new IllegalArgumentException("unknow matrix stack type");
 	}
+	
+	public void loadIdentityMatrix(MatrixStackType type) {
+		switch (type) {
+		case MATRIX_STACK_MODELVIEW:
+			modelViewMatrixStack.get(0).loadIdentity();
+			return;
+		case MATRIX_STACK_PROJECTION:
+			projectionMatrixStack.get(0).loadIdentity();
+			return;
+		case MATRIX_STACK_TEXTURE:
+			textureMatrixStack.get(0).loadIdentity();
+			return;
+		}
+		throw new IllegalArgumentException("unknow matrix stack type");
+	}
+	
+	public void loadMatrix(MatrixStackType type, Mat4 matrix) {
+		switch (type) {
+		case MATRIX_STACK_MODELVIEW:
+			modelViewMatrixStack.set(0, matrix);
+			return;
+		case MATRIX_STACK_PROJECTION:
+			projectionMatrixStack.set(0, matrix);
+			return;
+		case MATRIX_STACK_TEXTURE:
+			textureMatrixStack.set(0, matrix);
+			return;
+		}
+		throw new IllegalArgumentException("unknow matrix stack type");
+	}
+	
+	public void multiplyMatrix(MatrixStackType type, Mat4 matrix) {
+		switch (type) {
+		case MATRIX_STACK_MODELVIEW:
+			modelViewMatrixStack.get(0).multiply(matrix);
+			return;
+		case MATRIX_STACK_PROJECTION:
+			projectionMatrixStack.get(0).multiply(matrix);
+			return;
+		case MATRIX_STACK_TEXTURE:
+			textureMatrixStack.get(0).multiply(matrix);
+			return;
+		}
+		throw new IllegalArgumentException("unknow matrix stack type");
+	}
+	
+	public void pushMatrix(MatrixStackType type) {
+		switch (type) {
+		case MATRIX_STACK_MODELVIEW:
+			modelViewMatrixStack.push(modelViewMatrixStack.firstElement().clone());
+			return;
+		case MATRIX_STACK_PROJECTION:
+			projectionMatrixStack.push(projectionMatrixStack.firstElement().clone());
+			return;
+		case MATRIX_STACK_TEXTURE:
+			textureMatrixStack.push(textureMatrixStack.firstElement().clone());
+			return;
+		}
+		throw new IllegalArgumentException("unknow matrix stack type");
+	}
+	
+	public Mat4 getMatrix(MatrixStackType type) {
+		switch (type) {
+		case MATRIX_STACK_MODELVIEW:
+			return modelViewMatrixStack.firstElement();
+		case MATRIX_STACK_PROJECTION:
+			return projectionMatrixStack.firstElement();
+		case MATRIX_STACK_TEXTURE:
+			return textureMatrixStack.firstElement();
+		}
+		throw new IllegalArgumentException("unknow matrix stack type");
+	}
+	
+	public void setProjection(Projection projection) {
+		switch (projection) {
+		case _2D:
+			loadIdentityMatrix(MatrixStackType.MATRIX_STACK_PROJECTION);
+			Mat4 orthoMatrix = new Mat4();
+			Mat4.createOrthographicOffCenter(0, winSizeInPoints.width, 0, winSizeInPoints.height,
+					-1024, 1024, orthoMatrix);
+			multiplyMatrix(MatrixStackType.MATRIX_STACK_PROJECTION, orthoMatrix);
+			loadIdentityMatrix(MatrixStackType.MATRIX_STACK_MODELVIEW);
+			break;
+		}
+		this.projection = projection;
+	}
+	
+	public void setAlphaBlending(boolean on) {
+		if (on) {
+			GL.blendFunc(GL2.GL_ONE, GL2.GL_ONE_MINUS_SRC_ALPHA);
+		} else {
+			GL.blendFunc(GL2.GL_ONE, GL2.GL_ZERO);
+		}
+	}
+	
+	public void setDepthTest(boolean on) {
+		renderer.setDepthTest(on);
+	}
+	
+	public void setClearColor(Color4F clearColor) {
+		renderer.setClearColor(clearColor);
+	}
+
+	
+	
+	
+	
+	public enum Projection {
+		_2D
+	}
+	
+	public enum MatrixStackType {
+		MATRIX_STACK_MODELVIEW,
+		MATRIX_STACK_PROJECTION,
+		MATRIX_STACK_TEXTURE
+	}
+	
+	public void setDirty(boolean dirty) {
+		this.dirty = dirty;
+	}
+	
+	public GLEventListener glEventListener = new GLEventListener() {
+		@Override
+		public void init(GLAutoDrawable drawable) {
+			GL.setGL(drawable.getGL().getGL2());
+			if (listener != null) {
+				listener.init();
+			}
+		}
+		@Override
+		public void display(GLAutoDrawable drawable) {
+			if (dirty) {
+				dirty = false;
+				if (openGLView != null) {
+					setGLDefaultValues();
+				}
+				renderer.initGLView();
+			}
+			drawScene();
+		}
+		@Override
+		public void dispose(GLAutoDrawable drawable) {
+		}
+		@Override
+		public void reshape(GLAutoDrawable drawable, int x, int y, int width,
+				int height) {
+		}
+	};
+	
 }

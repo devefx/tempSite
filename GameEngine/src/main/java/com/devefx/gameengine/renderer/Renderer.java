@@ -9,10 +9,9 @@ import java.util.List;
 
 import com.devefx.gameengine.base.types.Color4F;
 import com.devefx.gameengine.base.types.Types;
+import com.devefx.gameengine.renderer.GLStateCache.GL;
 import com.jogamp.common.nio.Buffers;
-import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
-import com.jogamp.opengl.GLContext;
 
 public class Renderer {
 	
@@ -49,9 +48,6 @@ public class Renderer {
 	protected boolean isDepthTest;
 	protected boolean isRendering;
 	
-	public static GL2 gl;
-	private int attributeFlags = 0;
-	
 	public Renderer() {
 		renderQueue = new RenderQueue();
 		batchQuadCommands = new ArrayList<QuadCommand>();
@@ -69,7 +65,6 @@ public class Renderer {
 	}
 	
 	public void initGLView() {
-		gl = GLContext.getCurrentGL().getGL2();
 		
 		for (int i = 0; i < VBO_SIZE / 4; i++) {
 			quadIndices.put((short) (i * 4 + 0));
@@ -109,22 +104,25 @@ public class Renderer {
 	}
 	
 	public void clear() {
+		GL2 gl = GL.getGL();
 		gl.glDepthMask(true);
-		gl.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT);
+		gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
 		gl.glDepthMask(false);
 	}
 	
 	public void setClearColor(Color4F clearColor) {
+		GL2 gl = GL.getGL();
 		gl.glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
 		this.clearColor = clearColor;
 	}
 	
 	public void setDepthTest(boolean enable) {
+		GL2 gl = GL.getGL();
 		if (enable) {
 			gl.glClearDepth(1.0f);
-			gl.glEnable(GL.GL_DEPTH_TEST);
+			gl.glEnable(GL2.GL_DEPTH_TEST);
 		} else {
-			gl.glDisable(GL.GL_DEPTH_TEST);
+			gl.glDisable(GL2.GL_DEPTH_TEST);
 		}
 		isDepthTest = enable;
 	}
@@ -138,9 +136,10 @@ public class Renderer {
 	}
 	
 	protected void setupVBOAndVAO() {
+		GL2 gl = GL.getGL();
 		// generate vao for trianglesCommand
 		gl.glGenVertexArrays(1, buffersVAO);
-		gl.glBindVertexArray(buffersVAO.get(0));
+		GL.bindVAO(buffersVAO.get(0));
 		// generate vbo for trianglesCommand
 		gl.glGenBuffers(2, buffersVBO);
 		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, buffersVBO.get(0));
@@ -161,13 +160,13 @@ public class Renderer {
 		gl.glBufferData(GL2.GL_ELEMENT_ARRAY_BUFFER, Buffers.SIZEOF_SHORT * INDEX_VBO_SIZE, indices, GL2.GL_STATIC_DRAW);
 		
 		// Must unbind the VAO before changing the element buffer.
-		gl.glBindVertexArray(0);
+		GL.bindVAO(0);
 		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, 0);
 		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);
 		
 		//generate vao for quadCommand
 		gl.glGenVertexArrays(1, quadVAO);
-		gl.glBindVertexArray(quadVAO.get(0));
+		GL.bindVAO(quadVAO.get(0));
 		
 		// generate vbo for quadCommand
 		gl.glGenBuffers(2, quadbuffersVBO);
@@ -189,19 +188,21 @@ public class Renderer {
 		gl.glBufferData(GL2.GL_ELEMENT_ARRAY_BUFFER, Buffers.SIZEOF_SHORT * INDEX_VBO_SIZE, quadIndices, GL2.GL_STATIC_DRAW);
 		
 		// Must unbind the VAO before changing the element buffer.
-		gl.glBindVertexArray(0);
+		GL.bindVAO(0);
 		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, 0);
 		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);
 	}
 	
 	protected void setupVBO() {
+		GL2 gl = GL.getGL();
 		gl.glGenBuffers(2, buffersVBO);
 		gl.glGenBuffers(2, quadbuffersVBO);
 		mapBuffers();
 	}
 	
 	protected void mapBuffers() {
-		gl.glBindVertexArray(0);
+		GL2 gl = GL.getGL();
+		GL.bindVAO(0);
 		
 		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, buffersVBO.get(0));
 		gl.glBufferData(GL2.GL_ARRAY_BUFFER, Types.SIZEOF_V3F_C4B_T2F * VBO_SIZE, verts, GL2.GL_DYNAMIC_DRAW);
@@ -244,14 +245,15 @@ public class Renderer {
 	}
 	
 	protected void visitRenderQueue(RenderQueue queue) {
+		GL2 gl = GL.getGL();
 		queue.saveRenderState();
 		
 		if (queue.size() > 0) {
 			if (isDepthTest) {
-				gl.glEnable(GL.GL_DEPTH_TEST);
+				gl.glEnable(GL2.GL_DEPTH_TEST);
 				gl.glDepthMask(true);
 			} else {
-				gl.glDisable(GL.GL_DEPTH_TEST);
+				gl.glDisable(GL2.GL_DEPTH_TEST);
 				gl.glDepthMask(false);
 			}
 			Iterator<RenderCommand> it = queue.getQueue();
@@ -301,10 +303,12 @@ public class Renderer {
 		if (batchQuadCommands.isEmpty()) {
 			return;
 		}
-
+		
+		GL2 gl = GL.getGL();
+		
 		if (supportsShareableVAO) {
 			// 绑定VAO
-			gl.glBindVertexArray(quadVAO.get(0));
+			GL.bindVAO(quadVAO.get(0));
 			// 绑定VBO
 			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, quadbuffersVBO.get(0));
 			gl.glBufferData(GL2.GL_ARRAY_BUFFER, Types.SIZEOF_V3F_C4B_T2F_QUAD * numberQuads, null, GL2.GL_DYNAMIC_DRAW);
@@ -321,8 +325,7 @@ public class Renderer {
 			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, quadbuffersVBO.get(0));
 			gl.glBufferData(GL2.GL_ARRAY_BUFFER, Types.SIZEOF_V3F_C4B_T2F_QUAD * numberQuads, quadVerts, GL2.GL_DYNAMIC_DRAW);
 			
-			enableVertexAttribs(7);
-			
+			GL.enableVertexAttribs(GL.VERTEX_ATTRIB_FLAG_POS_COLOR_TEX);
 			// vertices
 			gl.glVertexAttribPointer(VERTEX_ATTRIB_POSITION, 3, GL2.GL_FLOAT, false, Types.SIZEOF_V3F_C4B_T2F, 0);
 	        // colors
@@ -334,37 +337,16 @@ public class Renderer {
 		}
 		// Start drawing verties in batch
 		for (QuadCommand cmd : batchQuadCommands) {
-			if (gl.glIsTexture(cmd.textureID)) {
-				gl.glBindTexture(GL2.GL_TEXTURE_2D, cmd.textureID);
-			}
+			cmd.useMaterial();
 		}
 		gl.glDrawElements(GL2.GL_TRIANGLES, numberQuads * 6, GL2.GL_UNSIGNED_SHORT, 0);
 		
 		if (supportsShareableVAO) {
-			gl.glBindVertexArray(0);
+			GL.bindVAO(0);
 		} else {
 			gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, 0);
 			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);
 		}
-	}
-	
-	protected void enableVertexAttribs(int flags) {
-		gl.glBindVertexArray(0);
-		
-		final int MAX_ATTRIBUTES = 16;
-		for (int i = 0; i < MAX_ATTRIBUTES; i++) {
-			int bit = 1 << i;
-			boolean enabled = (flags & bit) != 0;
-			boolean enabledBefore = (attributeFlags & bit) != 0;
-			if(enabled != enabledBefore) {
-				if (enabled) {
-					gl.glEnableVertexAttribArray(i);
-				} else {
-					gl.glDisableVertexAttribArray(i);
-				}
-			}
-		}
-		attributeFlags = flags;
 	}
 	
 }

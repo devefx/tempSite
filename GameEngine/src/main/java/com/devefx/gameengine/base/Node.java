@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.devefx.gameengine.base.types.Vec2;
+import com.devefx.gameengine.math.Mat4;
+import com.devefx.gameengine.renderer.GLProgramState;
 import com.devefx.gameengine.renderer.Renderer;
 
 public abstract class Node {
@@ -12,6 +14,7 @@ public abstract class Node {
 	protected Node parent;
 	protected Vec2 position;
 	protected float globalOrder;
+	protected GLProgramState glProgramState;
 	
 	public Node() {
 		children = new ArrayList<Node>();
@@ -33,6 +36,12 @@ public abstract class Node {
 		position.x = x;
 		position.y = y;
 	}
+	public GLProgramState getGLProgramState() {
+		return glProgramState;
+	}
+	public void setGLProgramState(GLProgramState glProgramState) {
+		this.glProgramState = glProgramState;
+	}
 	
-	public abstract void draw(Renderer renderer);
+	public abstract void draw(Renderer renderer, Mat4 transform);
 }

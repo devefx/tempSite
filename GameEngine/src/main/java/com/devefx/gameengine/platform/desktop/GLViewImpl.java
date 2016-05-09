@@ -1,13 +1,17 @@
 package com.devefx.gameengine.platform.desktop;
 
-import java.awt.Insets;
-
-import javax.swing.JFrame;
+import java.awt.BorderLayout;
+import java.awt.Frame;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 import com.devefx.gameengine.base.Director;
 import com.devefx.gameengine.base.types.Rect;
 import com.devefx.gameengine.platform.GLView;
+import com.jogamp.opengl.GLCapabilities;
+import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLCanvas;
+import com.jogamp.opengl.util.Animator;
 
 public class GLViewImpl extends GLView {
 
@@ -20,26 +24,57 @@ public class GLViewImpl extends GLView {
 	}
 	
 	protected boolean initWithRect(String viewName, Rect rect) {
-		// set the view name
+		// setting the view name and size
 		setViewName(viewName);
 		setFrameSize(rect.size.width, rect.size.height);
-		// init canvas
-		Director director = Director.getInstance();
-		GLCanvas canvas = director.initGLCanvas((int) rect.size.width, (int) rect.size.height);
-		// creating frame
-		final JFrame frame = new JFrame(viewName);
-		// adding canvas to frame
-		frame.getContentPane().add(canvas);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		// getting the capabilities object of GL2 profile
+		GLProfile profile = GLProfile.get(GLProfile.GL2);
+		GLCapabilities capabilities = new GLCapabilities(profile);
+		// The canvas
+		GLCanvas glcanvas = new GLCanvas(capabilities);
+		glcanvas.addGLEventListener(Director.getInstance().glEventListener);
+		glcanvas.setSize((int) rect.size.width, (int) rect.size.height);
+		// 
+		final Animator animator = new Animator(glcanvas);
+		// The Windows
+		Frame frame = new Frame(viewName);
+		frame.setLayout(new BorderLayout());
+		frame.setSize(glcanvas.getSize());
 		frame.setResizable(false);
-		// calculate frame size
-		frame.addNotify();
-		Insets insets = frame.getInsets();
-		int width = (int) rect.size.width + insets.left + insets.right;
-		int height = (int) rect.size.height + insets.top + insets.bottom;
-		frame.setSize(width, height);
 		frame.setLocationRelativeTo(null);
+		frame.add(glcanvas, BorderLayout.CENTER);
+		frame.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				animator.start();
+				System.exit(0);
+			}
+		});
+		frame.pack();
 		frame.setVisible(true);
+		animator.start();
 		return true;
+	}
+
+	@Override
+	public void end() {
+		
+	}
+
+	@Override
+	public boolean isOpenGLReady() {
+		return false;
+	}
+
+	@Override
+	public void swapBuffers() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setCursorVisible(boolean isVisible) {
+		// TODO Auto-generated method stub
+		
 	}
 }

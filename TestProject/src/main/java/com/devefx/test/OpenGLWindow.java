@@ -128,15 +128,7 @@ public class OpenGLWindow {
 		private void initCreateProgram() throws IOException {
 			final GL2 gl = GLContext.getCurrentGL().getGL2();
 			
-			String vertexShaderString = readFile("shader_PositionTextureColor.vert");
-			String fragmentShaderString = readFile("shader_PositionTextureColor.frag");
-			
-			if (gl.isGL3core()) {
-				vertexShaderString = "#version 130\n"+vertexShaderString;
-	            fragmentShaderString = "#version 130\n"+fragmentShaderString;
-			}
-			
-			if (glProgram.init(vertexShaderString, fragmentShaderString)) {
+			if (glProgram.initWithFilename("shader_PositionTextureColor.vert", "shader_PositionTextureColor.frag")) {
 				glProgram.link();
 				glProgram.use();
 			}

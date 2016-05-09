@@ -120,6 +120,7 @@ public class VertexBufferObject implements GLEventListener {
     canvas.requestFocus();
 
     animator.start();
+    
   }
 
   private void shutdownDemo() {

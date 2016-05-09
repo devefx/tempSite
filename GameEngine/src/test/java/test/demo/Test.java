@@ -1,7 +1,7 @@
 package test.demo;
 
 import com.devefx.gameengine.base.Director;
-import com.devefx.gameengine.base.InitializeGame;
+import com.devefx.gameengine.base.EventListener;
 import com.devefx.gameengine.base.types.Rect;
 import com.devefx.gameengine.platform.GLView;
 import com.devefx.gameengine.platform.desktop.GLViewImpl;
@@ -23,7 +23,7 @@ public class Test {
 		
 		glView.setDesignResolutionSize(800, 600);
 		
-		director.run(new InitializeGame() {
+		director.setListener(new EventListener() {
 			@Override
 			public void init() {
 				director.runWithScene(new FirstScene());

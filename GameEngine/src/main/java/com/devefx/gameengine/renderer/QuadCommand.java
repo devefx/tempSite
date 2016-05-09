@@ -1,10 +1,9 @@
 package com.devefx.gameengine.renderer;
 
-import com.devefx.gameengine.base.Director;
 import com.devefx.gameengine.base.types.BlendFunc;
 import com.devefx.gameengine.base.types.V3F_C4B_T2F_Quad;
-import com.jogamp.opengl.GL;
-import com.jogamp.opengl.GL2;
+import com.devefx.gameengine.math.Mat4;
+import com.devefx.gameengine.renderer.GLStateCache.GL;
 
 public class QuadCommand extends RenderCommand {
 	
@@ -12,14 +11,21 @@ public class QuadCommand extends RenderCommand {
 	
 	protected int textureID;
 	
+	protected GLProgramState glProgramState;
+	
 	protected BlendFunc blendType;
 	
 	protected V3F_C4B_T2F_Quad[] quads;
 	
-	public void init(float globalOrder, int textureID, BlendFunc blendType, V3F_C4B_T2F_Quad... quads) {
+	protected Mat4 mv;
+	
+	public void init(float globalOrder, int textureID, GLProgramState shader, BlendFunc blendType, Mat4 mv,
+			V3F_C4B_T2F_Quad... quads) {
 		this.globalOrder = globalOrder;
 		this.textureID = textureID;
+		this.glProgramState = shader;
 		this.blendType = blendType;
+		this.mv = mv;
 		this.quads = quads;
 	}
 	
@@ -44,11 +50,10 @@ public class QuadCommand extends RenderCommand {
 	}
 	
 	public void useMaterial() {
-		GL gl = Director.getInstance().getGL();
-		if (gl.glIsTexture(textureID)) {
-			gl.glBindTexture(GL2.GL_TEXTURE_2D, textureID);
-		}
+		GL.bindTexture2D(textureID);
 		
+		GL.blendFunc(blendType.src, blendType.dst);
 		
+		glProgramState.apply(mv);
 	}
 }
