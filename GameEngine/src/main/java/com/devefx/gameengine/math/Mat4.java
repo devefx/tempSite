@@ -1,5 +1,7 @@
 package com.devefx.gameengine.math;
 
+import com.devefx.gameengine.base.types.Vec3;
+
 public class Mat4 {
 	public float[] m = new float[16];
 	
@@ -64,6 +66,12 @@ public class Mat4 {
 	    this.m = product;
 	}
 	
+	public void translate(float x, float y, float z) {
+		Mat4 matrix = new Mat4();
+		createTranslation(x, y, z, matrix);
+		multiply(matrix);
+	}
+	
 	public static void createPerspective(float fieldOfView, float aspectRatio, float zNearPlane, float zFarPlane, Mat4 dst) {
 		float f_n = 1.0f / (zFarPlane - zNearPlane);
 		float theta = fieldOfView * 0.0174532925f * 0.5f;
@@ -97,6 +105,18 @@ public class Mat4 {
 	    dst.m[13] = (top + bottom) / (bottom - top);
 	    dst.m[14] = (zNearPlane + zFarPlane) / (zNearPlane - zFarPlane);
 	    dst.m[15] = 1;
+	}
+	
+	public static void createTranslation(Vec3 translation, Mat4 dst) {
+		dst.m[12] = translation.x;
+		dst.m[13] = translation.y;
+		dst.m[14] = translation.z;
+	}
+	
+	public static void createTranslation(float xTranslation, float yTranslation, float zTranslation, Mat4 dst) {
+		dst.m[12] = xTranslation;
+		dst.m[13] = yTranslation;
+		dst.m[14] = zTranslation;
 	}
 	
 	public static Mat4 multiplyMatrix(Mat4 m1, Mat4 m2) {

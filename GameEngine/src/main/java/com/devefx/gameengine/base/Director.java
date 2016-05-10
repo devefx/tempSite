@@ -81,7 +81,9 @@ public class Director {
 			//renderer.initGLView();
 		}
 	}
-	
+	public Renderer getRenderer() {
+		return renderer;
+	}
 	public GLView getOpenGLView() {
 		return openGLView;
 	}
@@ -155,6 +157,9 @@ public class Director {
 	
 	protected void setNextScene() {
 		runningScene = nextScene;
+		nextScene = null;
+		
+		runningScene.onEnter();
 	}
 	
 	
@@ -262,6 +267,10 @@ public class Director {
 		throw new IllegalArgumentException("unknow matrix stack type");
 	}
 	
+	public Projection getProjection() {
+		return projection;
+	}
+	
 	public void setProjection(Projection projection) {
 		switch (projection) {
 		case _2D:
@@ -310,23 +319,29 @@ public class Director {
 		this.dirty = dirty;
 	}
 	
+	public void updateDirty() {
+		if (dirty) {
+			dirty = false;
+			if (openGLView != null) {
+				setGLDefaultValues();
+			}
+			renderer.initGLView();
+		}
+	}
+	
 	public GLEventListener glEventListener = new GLEventListener() {
 		@Override
 		public void init(GLAutoDrawable drawable) {
 			GL.setGL(drawable.getGL().getGL2());
+			updateDirty();
 			if (listener != null) {
 				listener.init();
 			}
 		}
 		@Override
 		public void display(GLAutoDrawable drawable) {
-			if (dirty) {
-				dirty = false;
-				if (openGLView != null) {
-					setGLDefaultValues();
-				}
-				renderer.initGLView();
-			}
+			updateDirty();
+			
 			drawScene();
 		}
 		@Override

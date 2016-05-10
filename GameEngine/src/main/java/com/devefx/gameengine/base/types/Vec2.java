@@ -12,6 +12,11 @@ public class Vec2 implements OutputBuffer {
 	public Vec2() {
 	}
 	
+	public Vec2(Vec2 vec2) {
+		assert(vec2 != null);
+		set(vec2.x, vec2.y);
+	}
+	
 	public Vec2(float x, float y) {
 		set(x, y);
 	}
@@ -49,6 +54,36 @@ public class Vec2 implements OutputBuffer {
 	public void write(ByteBuffer buffer) {
 		buffer.putFloat(x);
 		buffer.putFloat(y);
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + Float.floatToIntBits(x);
+		result = prime * result + Float.floatToIntBits(y);
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Vec2 other = (Vec2) obj;
+		if (Float.floatToIntBits(x) != Float.floatToIntBits(other.x))
+			return false;
+		if (Float.floatToIntBits(y) != Float.floatToIntBits(other.y))
+			return false;
+		return true;
+	}
+
+	@Override
+	public Vec2 clone() {
+		return new Vec2(this);
 	}
 	
 	public static final Vec2 ZERO					= new Vec2(0.0f, 0.0f);

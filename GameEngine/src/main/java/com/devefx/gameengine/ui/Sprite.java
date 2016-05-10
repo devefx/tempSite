@@ -88,7 +88,7 @@ public class Sprite extends Node {
 	public void draw(Renderer renderer, Mat4 transform) {
 		try {
 			QuadCommand cmd = new QuadCommand();
-			cmd.init(globalOrder, texture.getName(), getGLProgramState(), blendFunc, transform, quad);
+			cmd.init(globalZOrder, texture.getName(), getGLProgramState(), blendFunc, transform, quad);
 			renderer.addCommand(cmd);
 		} catch (Exception e) {
 			e.printStackTrace();
