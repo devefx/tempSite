@@ -29,4 +29,14 @@ public class V3F_C4B_T2F_Quad implements OutputBuffer {
 		tl.write(buffer);
 		tr.write(buffer);
 	}
+	
+	@Override
+	public V3F_C4B_T2F_Quad clone() {
+		V3F_C4B_T2F_Quad quad = new V3F_C4B_T2F_Quad();
+		quad.bl = bl.clone();
+		quad.br = br.clone();
+		quad.tl = tl.clone();
+		quad.tr = tr.clone();
+		return quad;
+	}
 }

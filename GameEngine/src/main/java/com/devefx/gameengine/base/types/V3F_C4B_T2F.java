@@ -15,11 +15,20 @@ public class V3F_C4B_T2F implements OutputBuffer {
 		colors = new Color4B();
 		texCoords = new Tex2F();
 	}
-
+	
 	@Override
 	public void write(ByteBuffer buffer) {
 		vertices.write(buffer);
 		colors.write(buffer);
 		texCoords.write(buffer);
+	}
+	
+	@Override
+	public V3F_C4B_T2F clone() {
+		V3F_C4B_T2F v = new V3F_C4B_T2F();
+		v.vertices = vertices.clone();
+		v.colors = colors.clone();
+		v.texCoords = texCoords.clone();
+		return v;
 	}
 }

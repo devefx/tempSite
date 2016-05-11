@@ -12,11 +12,21 @@ public class Tex2F implements OutputBuffer {
 	public Tex2F() {
 	}
 	
+	public Tex2F(Tex2F tex2f) {
+		u = tex2f.u;
+		v = tex2f.v;
+	}
+	
 	public Tex2F(float u, float v) {
 		this.u = u;
 		this.v = v;
 	}
 
+	@Override
+	public Tex2F clone() {
+		return new Tex2F(this);
+	}
+	
 	@Override
 	public void write(ByteBuffer buffer) {
 		buffer.putFloat(u);

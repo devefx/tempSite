@@ -9,7 +9,6 @@ import com.devefx.gameengine.base.Director;
 import com.devefx.gameengine.base.Director.MatrixStackType;
 import com.devefx.gameengine.base.Node;
 import com.devefx.gameengine.base.types.Vec2;
-import com.devefx.gameengine.math.Mat4;
 import com.devefx.gameengine.renderer.Camera;
 import com.devefx.gameengine.renderer.Renderer;
 
@@ -43,16 +42,6 @@ public class Scene extends Node {
 		cameraOrderDirty = true;
 	}
 	
-	@Override
-	public void draw(Renderer renderer, Mat4 transform) {
-		if (!children.isEmpty()) {
-			
-			for (Node node: children) {
-				node.draw(renderer, transform);
-			}
-		}
-	}
-	
 	public void render(Renderer renderer) {
 		Director director = Director.getInstance();
 
@@ -76,7 +65,6 @@ public class Scene extends Node {
 			director.pushMatrix(MatrixStackType.MATRIX_STACK_PROJECTION);
 			director.loadMatrix(MatrixStackType.MATRIX_STACK_PROJECTION, camera.getProjectionMatrix());
 			
-			//draw(renderer, getNodeToParentTransform());
 			visit(renderer, getNodeToParentTransform());
 			renderer.render();
 			

@@ -14,6 +14,12 @@ public class FirstScene extends Scene {
 			Sprite sprite = Sprite.create(url.getPath());
 			sprite.setPosition(100, 100);
 			addChild(sprite);
+			
+			
+			Sprite sprite1 = Sprite.create();
+			sprite1.initWithTexture(sprite.getTexture());
+			sprite1.setPosition(300, 200);
+			addChild(sprite1);
 		}
 	}
 }

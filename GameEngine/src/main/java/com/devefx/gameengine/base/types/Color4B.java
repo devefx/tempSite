@@ -14,6 +14,13 @@ public class Color4B implements OutputBuffer {
 	public Color4B() {
 	}
 	
+	public Color4B(Color4B color) {
+		r = color.r;
+		g = color.g;
+		b = color.b;
+		a = color.a;
+	}
+	
 	public Color4B(int r, int g, int b, int a) {
 		this.r = (byte) r;
 		this.g = (byte) g;
@@ -34,6 +41,11 @@ public class Color4B implements OutputBuffer {
 		buffer.put(g);
 		buffer.put(b);
 		buffer.put(a);
+	}
+	
+	@Override
+	public Color4B clone() {
+		return new Color4B(this);
 	}
 	
 	public static final Color4B WHITE	= new Color4B(255, 255, 255, 255);

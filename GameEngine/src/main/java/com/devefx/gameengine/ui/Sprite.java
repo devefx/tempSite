@@ -25,12 +25,25 @@ public class Sprite extends Node {
 		quad = new V3F_C4B_T2F_Quad();
 	}
 	
+	public static Sprite create() {
+		Sprite sprite = new Sprite();
+		if (sprite.init()) {
+			return sprite;
+		}
+		return null;
+	}
+	
 	public static Sprite create(String filename) {
 		Sprite sprite = new Sprite();
 		if (sprite.initWithFile(filename)) {
 			return sprite;
 		}
 		return null;
+	}
+	
+	@Override
+	public boolean init() {
+		return initWithTexture(null, new Rect());
 	}
 	
 	public boolean initWithFile(String filename) {
@@ -44,6 +57,12 @@ public class Sprite extends Node {
 		} catch (Exception e) {
 		}
 		return false;
+	}
+	
+	public boolean initWithTexture(Texture2D texture) {
+		Rect rect = new Rect();
+		rect.size = texture.getContentSize();
+		return initWithTexture(texture, rect);
 	}
 	
 	public boolean initWithTexture(Texture2D texture, Rect rect) {
@@ -61,9 +80,14 @@ public class Sprite extends Node {
 		return true;
 	}
 	
+	public Texture2D getTexture() {
+		return texture;
+	}
+	
 	public void setTexture(Texture2D texture) {
 		this.texture = texture;
 	}
+	
 	public void setTextureRect(Rect rect) {
 		float x1 = position.x;
 		float y1 = position.y;
@@ -77,6 +101,7 @@ public class Sprite extends Node {
 		
 		setTextureCoords(rect);
 	}
+	
 	public void setTextureCoords(Rect rect) {
 		quad.bl.texCoords = new Tex2F(0, 0);
 		quad.br.texCoords = new Tex2F(1, 0);

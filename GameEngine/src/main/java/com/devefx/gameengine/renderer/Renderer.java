@@ -9,6 +9,8 @@ import java.util.List;
 
 import com.devefx.gameengine.base.types.Color4F;
 import com.devefx.gameengine.base.types.Types;
+import com.devefx.gameengine.base.types.V3F_C4B_T2F_Quad;
+import com.devefx.gameengine.math.Mat4;
 import com.devefx.gameengine.renderer.GLStateCache.GL;
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opengl.GL2;
@@ -45,8 +47,13 @@ public class Renderer {
 	
 	protected boolean glViewAssigned;
 	
+	protected int drawnBatches;
+	protected int drawnVertices;
+	
 	protected boolean isDepthTest;
 	protected boolean isRendering;
+	
+	protected int lastMaterialID;
 	
 	public Renderer() {
 		renderQueue = new RenderQueue();
@@ -60,7 +67,7 @@ public class Renderer {
 		
 		quadVAO = Buffers.newDirectIntBuffer(1);
 		quadbuffersVBO = Buffers.newDirectIntBuffer(2);
-		quadVerts = Buffers.newDirectByteBuffer(Types.SIZEOF_V3F_C4B_T2F * VBO_SIZE);
+		quadVerts = Buffers.newDirectByteBuffer(Types.SIZEOF_V3F_C4B_T2F_QUAD * VBO_SIZE);
 		quadIndices = Buffers.newDirectShortBuffer(Buffers.SIZEOF_SHORT * INDEX_VBO_SIZE);
 	}
 	
@@ -99,8 +106,6 @@ public class Renderer {
 	
 	public void clean() {
 		renderQueue.clear();
-		batchQuadCommands.clear();
-		numberQuads = 0;
 	}
 	
 	public void clear() {
@@ -108,6 +113,11 @@ public class Renderer {
 		gl.glDepthMask(true);
 		gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
 		gl.glDepthMask(false);
+	}
+	
+	public void clearDrawStats() {
+		drawnBatches = 0;
+		drawnVertices = 0;
 	}
 	
 	public void setClearColor(Color4F clearColor) {
@@ -171,7 +181,7 @@ public class Renderer {
 		// generate vbo for quadCommand
 		gl.glGenBuffers(2, quadbuffersVBO);
 		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, quadbuffersVBO.get(0));
-		gl.glBufferData(GL2.GL_ARRAY_BUFFER, Types.SIZEOF_V3F_C4B_T2F * VBO_SIZE, quadVerts, GL2.GL_DYNAMIC_DRAW);
+		gl.glBufferData(GL2.GL_ARRAY_BUFFER, Types.SIZEOF_V3F_C4B_T2F * VBO_SIZE, null, GL2.GL_DYNAMIC_DRAW);
 		
 		// vertices
 		gl.glEnableVertexAttribArray(VERTEX_ATTRIB_POSITION);
@@ -208,7 +218,7 @@ public class Renderer {
 		gl.glBufferData(GL2.GL_ARRAY_BUFFER, Types.SIZEOF_V3F_C4B_T2F * VBO_SIZE, verts, GL2.GL_DYNAMIC_DRAW);
 	    
 		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, quadbuffersVBO.get(0));
-		gl.glBufferData(GL2.GL_ARRAY_BUFFER, Types.SIZEOF_V3F_C4B_T2F * VBO_SIZE, quadVerts, GL2.GL_DYNAMIC_DRAW);
+		gl.glBufferData(GL2.GL_ARRAY_BUFFER, Types.SIZEOF_V3F_C4B_T2F * VBO_SIZE, null, GL2.GL_DYNAMIC_DRAW);
 	    
 		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, buffersVBO.get(1));
 		gl.glBufferData(GL2.GL_ELEMENT_ARRAY_BUFFER, Buffers.SIZEOF_SHORT * INDEX_VBO_SIZE, indices, GL2.GL_STATIC_DRAW);
@@ -289,11 +299,17 @@ public class Renderer {
 	}
 	
 	protected void fillQuads(QuadCommand cmd) {
+		final Mat4 modelView = cmd.getModelView();
+		final V3F_C4B_T2F_Quad quad = cmd.getQuads().clone();
 		
+		modelView.transformPoint(quad.bl.vertices, quad.bl.vertices);
+		modelView.transformPoint(quad.br.vertices, quad.br.vertices);
+		modelView.transformPoint(quad.tl.vertices, quad.tl.vertices);
+		modelView.transformPoint(quad.tr.vertices, quad.tr.vertices);
 		
-		
-		cmd.getQuads();
-		
+		quadVerts.position(Types.SIZEOF_V3F_C4B_T2F_QUAD * numberQuads);
+		quad.write(quadVerts);
+		quadVerts.rewind();
 		
 		numberQuads += cmd.getQuadCount();
 	}
@@ -304,6 +320,10 @@ public class Renderer {
 			return;
 		}
 		
+		// 
+		int indexToDraw = 0;
+		int startIndex = 0;
+		
 		GL2 gl = GL.getGL();
 		
 		if (supportsShareableVAO) {
@@ -311,20 +331,14 @@ public class Renderer {
 			GL.bindVAO(quadVAO.get(0));
 			// 绑定VBO
 			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, quadbuffersVBO.get(0));
-			gl.glBufferData(GL2.GL_ARRAY_BUFFER, Types.SIZEOF_V3F_C4B_T2F_QUAD * numberQuads, null, GL2.GL_DYNAMIC_DRAW);
-			// 提交VBO数据
-			ByteBuffer buffer = gl.glMapBuffer(GL2.GL_ARRAY_BUFFER, GL2.GL_WRITE_ONLY);
-			for (QuadCommand cmd : batchQuadCommands) {
-				cmd.getQuads()[0].write(buffer);
-			}
-			gl.glUnmapBuffer(GL2.GL_ARRAY_BUFFER);
+			gl.glBufferData(GL2.GL_ARRAY_BUFFER, Types.SIZEOF_V3F_C4B_T2F_QUAD * numberQuads, quadVerts, GL2.GL_DYNAMIC_DRAW);
 			// 解除VBO绑定
 			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);
 		} else {
 			// 绑定VBO
 			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, quadbuffersVBO.get(0));
 			gl.glBufferData(GL2.GL_ARRAY_BUFFER, Types.SIZEOF_V3F_C4B_T2F_QUAD * numberQuads, quadVerts, GL2.GL_DYNAMIC_DRAW);
-			
+			// 开启顶点属性
 			GL.enableVertexAttribs(GL.VERTEX_ATTRIB_FLAG_POS_COLOR_TEX);
 			// vertices
 			gl.glVertexAttribPointer(VERTEX_ATTRIB_POSITION, 3, GL2.GL_FLOAT, false, Types.SIZEOF_V3F_C4B_T2F, 0);
@@ -337,9 +351,30 @@ public class Renderer {
 		}
 		// Start drawing verties in batch
 		for (QuadCommand cmd : batchQuadCommands) {
-			cmd.useMaterial();
+			
+			int nowMaterialID = cmd.getMaterialID();
+			if (lastMaterialID != nowMaterialID) {
+				if (indexToDraw > 0) {
+					
+					gl.glDrawElements(GL2.GL_TRIANGLES, indexToDraw, GL2.GL_UNSIGNED_SHORT, startIndex * Buffers.SIZEOF_SHORT);
+					drawnBatches ++;
+					drawnVertices += indexToDraw;
+					
+					startIndex += indexToDraw;
+					indexToDraw = 0;
+				}
+				cmd.useMaterial();
+				lastMaterialID = nowMaterialID;
+			}
+			
+			indexToDraw += cmd.getQuadCount() * 6;
 		}
-		gl.glDrawElements(GL2.GL_TRIANGLES, numberQuads * 6, GL2.GL_UNSIGNED_SHORT, 0);
+		
+		if (indexToDraw > 0) {
+			gl.glDrawElements(GL2.GL_TRIANGLES, indexToDraw, GL2.GL_UNSIGNED_SHORT, startIndex * Buffers.SIZEOF_SHORT);
+			drawnBatches ++;
+			drawnVertices += indexToDraw;
+		}
 		
 		if (supportsShareableVAO) {
 			GL.bindVAO(0);
@@ -347,6 +382,11 @@ public class Renderer {
 			gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, 0);
 			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);
 		}
+		
+		batchQuadCommands.clear();
+		numberQuads = 0;
+		
+		System.err.println("批次：" + drawnBatches + "\t顶点：" + drawnVertices);
 	}
 	
 }

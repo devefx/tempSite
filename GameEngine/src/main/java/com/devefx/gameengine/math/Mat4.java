@@ -72,6 +72,17 @@ public class Mat4 {
 		multiply(matrix);
 	}
 	
+	public void transformPoint(Vec3 point, Vec3 dst) {
+		assert(dst != null);
+		transformVector(point.x, point.y, point.z, 1.0f, dst);
+	}
+	
+	public void transformVector(float x, float y, float z, float w, Vec3 dst) {
+		dst.x = x * m[0] + y * m[4] + z * m[8] + w * m[12];
+	    dst.y = x * m[1] + y * m[5] + z * m[9] + w * m[13];
+	    dst.z = x * m[2] + y * m[6] + z * m[10] + w * m[14];
+	}
+	
 	public static void createPerspective(float fieldOfView, float aspectRatio, float zNearPlane, float zFarPlane, Mat4 dst) {
 		float f_n = 1.0f / (zFarPlane - zNearPlane);
 		float theta = fieldOfView * 0.0174532925f * 0.5f;

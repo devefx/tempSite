@@ -147,6 +147,9 @@ public class Director {
 		pushMatrix(MatrixStackType.MATRIX_STACK_MODELVIEW);
 		
 		if (runningScene != null) {
+			
+			renderer.clearDrawStats();
+			
 			runningScene.render(renderer);
 		}
 		
