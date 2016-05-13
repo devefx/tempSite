@@ -6,21 +6,11 @@ public abstract class RenderCommand {
 	
 	protected boolean skipBatching;
 	
-	protected Type type;
-	
-	public enum Type {
-		QUAD_COMMAND
-	}
-	
 	public float getGlobalOrder() {
 		return globalOrder;
 	}
 	
 	public boolean isSkipBatching() {
 		return skipBatching;
-	}
-	
-	public Type getType() {
-		return type;
 	}
 }

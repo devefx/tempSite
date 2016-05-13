@@ -6,6 +6,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 import com.devefx.gameengine.base.Director;
+import com.devefx.gameengine.base.EventListenerAdapter;
 import com.devefx.gameengine.base.types.Rect;
 import com.devefx.gameengine.platform.GLView;
 import com.jogamp.opengl.GLCapabilities;
@@ -34,6 +35,12 @@ public class GLViewImpl extends GLView {
 		GLCanvas glcanvas = new GLCanvas(capabilities);
 		glcanvas.addGLEventListener(Director.getInstance().glEventListener);
 		glcanvas.setSize((int) rect.size.width, (int) rect.size.height);
+		// Add evnet listener
+		final EventListenerAdapter eventAdapter = new EventListenerAdapter();
+		glcanvas.addMouseListener(eventAdapter);
+		glcanvas.addMouseWheelListener(eventAdapter);
+		glcanvas.addMouseMotionListener(eventAdapter);
+		glcanvas.addKeyListener(eventAdapter);
 		// 
 		final Animator animator = new Animator(glcanvas);
 		// The Windows
@@ -77,4 +84,5 @@ public class GLViewImpl extends GLView {
 		// TODO Auto-generated method stub
 		
 	}
+	
 }

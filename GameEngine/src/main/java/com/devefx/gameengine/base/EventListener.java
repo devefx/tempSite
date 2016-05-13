@@ -1,6 +1,9 @@
 package com.devefx.gameengine.base;
 
-public interface EventListener {
+public abstract class EventListener {
 	
-	public void init();	
+	public abstract void init();	
+	
+	public abstract void onEvent(Event event);
+	
 }

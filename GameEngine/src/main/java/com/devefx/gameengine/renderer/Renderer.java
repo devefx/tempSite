@@ -300,17 +300,19 @@ public class Renderer {
 	
 	protected void fillQuads(QuadCommand cmd) {
 		final Mat4 modelView = cmd.getModelView();
-		final V3F_C4B_T2F_Quad quad = cmd.getQuads().clone();
-		
-		modelView.transformPoint(quad.bl.vertices, quad.bl.vertices);
-		modelView.transformPoint(quad.br.vertices, quad.br.vertices);
-		modelView.transformPoint(quad.tl.vertices, quad.tl.vertices);
-		modelView.transformPoint(quad.tr.vertices, quad.tr.vertices);
 		
 		quadVerts.position(Types.SIZEOF_V3F_C4B_T2F_QUAD * numberQuads);
-		quad.write(quadVerts);
-		quadVerts.rewind();
 		
+		for (V3F_C4B_T2F_Quad quad : cmd.getQuads()) {
+			quad = quad.clone();
+			modelView.transformPoint(quad.bl.vertices, quad.bl.vertices);
+			modelView.transformPoint(quad.br.vertices, quad.br.vertices);
+			modelView.transformPoint(quad.tl.vertices, quad.tl.vertices);
+			modelView.transformPoint(quad.tr.vertices, quad.tr.vertices);
+			quad.write(quadVerts);
+		}
+		
+		quadVerts.rewind();
 		numberQuads += cmd.getQuadCount();
 	}
 	
@@ -386,7 +388,7 @@ public class Renderer {
 		batchQuadCommands.clear();
 		numberQuads = 0;
 		
-		System.err.println("批次：" + drawnBatches + "\t顶点：" + drawnVertices);
+		//System.err.println("批次：" + drawnBatches + "\t顶点：" + drawnVertices);
 	}
 	
 }

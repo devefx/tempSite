@@ -7,11 +7,13 @@ import com.devefx.gameengine.ui.Sprite;
 
 public class FirstScene extends Scene {
 	
+	public static Sprite sprite;
+	
 	public FirstScene() {
 		super();
 		URL url = getClass().getClassLoader().getResource("1.jpg");
 		if (url != null) {
-			Sprite sprite = Sprite.create(url.getPath());
+			sprite = Sprite.create(url.getPath());
 			sprite.setPosition(100, 100);
 			addChild(sprite);
 			

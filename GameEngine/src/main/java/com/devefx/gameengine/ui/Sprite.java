@@ -23,6 +23,7 @@ public class Sprite extends Node {
 	
 	public Sprite() {
 		quad = new V3F_C4B_T2F_Quad();
+		quadCommand = new QuadCommand();
 	}
 	
 	public static Sprite create() {
@@ -112,9 +113,8 @@ public class Sprite extends Node {
 	@Override
 	public void draw(Renderer renderer, Mat4 transform) {
 		try {
-			QuadCommand cmd = new QuadCommand();
-			cmd.init(globalZOrder, texture.getName(), getGLProgramState(), blendFunc, transform, quad);
-			renderer.addCommand(cmd);
+			quadCommand.init(globalZOrder, texture.getName(), getGLProgramState(), blendFunc, transform, quad);
+			renderer.addCommand(quadCommand);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

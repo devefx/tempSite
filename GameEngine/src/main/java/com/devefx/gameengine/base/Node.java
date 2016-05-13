@@ -58,11 +58,6 @@ public class Node {
 	
 	
 	
-	
-	
-	
-	
-	
 	public Node() {
 		rotationX = 0.0f;
 		rotationY = 0.0f;
@@ -422,7 +417,7 @@ public class Node {
 			
 			Mat4 translation = new Mat4();
 			Mat4.createTranslation(x, y, z, translation);
-			this.transform.multiply(translation);
+			this.transform = Mat4.multiplyMatrix(new Mat4(), translation);
 			this.transform.translate(-anchorPoint.x, -anchorPoint.y, 0);
 			
 			if (scaleX != 1.0f) {

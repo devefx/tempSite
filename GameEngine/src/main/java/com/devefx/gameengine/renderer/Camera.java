@@ -10,9 +10,10 @@ public class Camera extends Node {
 	
 	public static Camera visitingCamera;
 	
-	protected Mat4 projection;
 	protected Scene scene;
+	protected Mat4 projection;
 	protected int depth;
+	protected Type type;
 	protected CameraFlag cameraFlag;
 	
 	public static Camera createPerspective(float fieldOfView, float aspectRatio, float nearPlane, float farPlane) {
@@ -54,6 +55,10 @@ public class Camera extends Node {
 		visible = true;
 	}
 	
+	public Type getType() {
+		return type;
+	}
+	
 	public CameraFlag getCameraFlag() {
 		return cameraFlag;
 	}
@@ -64,26 +69,6 @@ public class Camera extends Node {
 	
 	public Mat4 getProjectionMatrix() {
 		return projection;
-	}
-	
-	public boolean initDefault() {
-		Size size = Director.getInstance().getWinSize();
-		switch (Director.getInstance().getProjection()) {
-		case _2D:
-			initOrthographic(size.width, size.height, -1024, 1024);
-			break;
-		}
-		return true;
-	}
-	
-	public boolean initPerspective(float fieldOfView, float aspectRatio, float nearPlane, float farPlane) {
-		Mat4.createPerspective(fieldOfView, aspectRatio, nearPlane, farPlane, projection);
-		return true;
-	}
-	
-	public boolean initOrthographic(float zoomX, float zoomY, float nearPlane, float farPlane) {
-		Mat4.createOrthographicOffCenter(0, zoomX, 0, zoomY, nearPlane, farPlane, projection);
-		return true;
 	}
 	
 	public int getDepth() {
@@ -110,6 +95,10 @@ public class Camera extends Node {
 		super.onEnter();
 	}
 	
+	public void onExit() {
+		
+	}
+	
 	public void setScene(Scene scene) {
 		if (this.scene != scene) {
 			if (this.scene != null) {
@@ -122,6 +111,30 @@ public class Camera extends Node {
 		}
 	}
 	
+	public boolean initDefault() {
+		Size size = Director.getInstance().getWinSize();
+		switch (Director.getInstance().getProjection()) {
+		case _2D:
+			initOrthographic(size.width, size.height, -1024, 1024);
+			break;
+		}
+		return true;
+	}
+	
+	public boolean initPerspective(float fieldOfView, float aspectRatio, float nearPlane, float farPlane) {
+		Mat4.createPerspective(fieldOfView, aspectRatio, nearPlane, farPlane, projection);
+		return true;
+	}
+	
+	public boolean initOrthographic(float zoomX, float zoomY, float nearPlane, float farPlane) {
+		Mat4.createOrthographicOffCenter(0, zoomX, 0, zoomY, nearPlane, farPlane, projection);
+		return true;
+	}
+	
+	public enum Type {
+		PERSPECTIVE,
+		ORTHOGRAPHIC
+	}
 	
 	public enum CameraFlag {
 		DEFAULT,

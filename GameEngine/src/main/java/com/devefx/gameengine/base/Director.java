@@ -19,6 +19,8 @@ public class Director {
 	protected Stack<Mat4> projectionMatrixStack;
 	protected Stack<Mat4> textureMatrixStack;
 	
+	protected EventDispatcher eventDispatcher;
+	
 	protected Projection projection;
 	
 	protected GLView openGLView;
@@ -61,6 +63,8 @@ public class Director {
 	
 	public boolean init() {
 		renderer = new Renderer();
+		
+		eventDispatcher = new EventDispatcher();
 		
 		initMatrixStack();
 		
@@ -165,7 +169,9 @@ public class Director {
 		runningScene.onEnter();
 	}
 	
-	
+	public EventDispatcher getEventDispatcher() {
+		return eventDispatcher;
+	}
 	
 	//
 	// FIXME TODO

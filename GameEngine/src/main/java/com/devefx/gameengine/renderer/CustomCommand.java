@@ -15,10 +15,12 @@ public class CustomCommand extends RenderCommand {
 	}
 	
 	public void execute() {
-		
+		if (collback != null) {
+			collback.draw();
+		}
 	}
 	
 	public interface Collback {
-		
+		void draw();
 	}
 }

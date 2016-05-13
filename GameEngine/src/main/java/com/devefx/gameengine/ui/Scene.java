@@ -8,6 +8,7 @@ import java.util.List;
 import com.devefx.gameengine.base.Director;
 import com.devefx.gameengine.base.Director.MatrixStackType;
 import com.devefx.gameengine.base.Node;
+import com.devefx.gameengine.base.types.Size;
 import com.devefx.gameengine.base.types.Vec2;
 import com.devefx.gameengine.renderer.Camera;
 import com.devefx.gameengine.renderer.Renderer;
@@ -26,6 +27,14 @@ public class Scene extends Node {
 		return null;
 	}
 	
+	public static Scene createWithSize(Size size) {
+		Scene scene = new Scene();
+		if (scene.initWithSize(size)) {
+			return scene;
+		}
+		return null;
+	}
+	
 	public Scene() {
 		cameras = new ArrayList<Camera>();
 		cameraOrderDirty = true;
@@ -34,8 +43,23 @@ public class Scene extends Node {
 		setAnchorPoint(new Vec2(0.5f, 0.5f));
 	}
 	
+	@Override
+	public boolean init() {
+		Size size = Director.getInstance().getWinSize();
+		return initWithSize(size);
+	}
+	
+	public boolean initWithSize(Size size) {
+		setContentSize(size);
+		return true;
+	}
+	
 	public List<Camera> getCameras() {
 		return cameras;
+	}
+	
+	public Camera getDefaultCamera() {
+		return defaultCamera;
 	}
 	
 	public void setCameraOrderDirty() {
@@ -72,4 +96,5 @@ public class Scene extends Node {
 		}
 		Camera.visitingCamera = null;
 	}
+	
 }
