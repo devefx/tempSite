@@ -1,6 +1,7 @@
 package test.demo;
 
 import com.devefx.gameengine.base.Director;
+import com.devefx.gameengine.base.Event;
 import com.devefx.gameengine.base.EventListener;
 import com.devefx.gameengine.base.types.Rect;
 import com.devefx.gameengine.platform.GLView;
@@ -27,6 +28,10 @@ public class Test {
 			@Override
 			public void init() {
 				director.runWithScene(new FirstScene());
+			}
+			@Override
+			public void onEvent(Event event) {
+				// TODO Auto-generated method stub
 			}
 		});
 	}
