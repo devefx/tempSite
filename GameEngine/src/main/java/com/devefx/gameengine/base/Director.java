@@ -72,6 +72,7 @@ public class Director {
 	}
 	
 	public void setOpenGLView(GLView openGLView) {
+		
 		if (this.openGLView != openGLView) {
 			
 			this.openGLView = openGLView;

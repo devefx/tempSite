@@ -27,7 +27,7 @@ public class Test {
 		director.setListener(new EventListener() {
 			@Override
 			public void init() {
-				director.runWithScene(new FirstScene());
+				director.runWithScene(new FirstScene()); 
 			}
 			@Override
 			public void onEvent(Event event) {
