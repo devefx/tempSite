@@ -1,6 +1,6 @@
 package com.devefx.edge.renderer;
 
-import com.devefx.gameengine.base.Director;
+import com.devefx.edge.base.Director;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GLContext;
 
@@ -28,7 +28,7 @@ public interface GLStateCache {
 		}
 		
 		public static void invalidateStateCache() {
-			Director.getInstance().initMatrixStack();
+			Director.getInstance().getMatrixControl().initMatrixStack();
 			currentProjectionMatrix = -1;
 			attributeFlags = 0;
 			

@@ -298,7 +298,7 @@ public class Director {
 	protected void restartDirector() {
 		reset();
 		
-		// TODO
+		// FIXME
 	}
 	/**
 	 * 暂停

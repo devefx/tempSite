@@ -2,7 +2,7 @@ package com.devefx.edge.base.types;
 
 import java.nio.ByteBuffer;
 
-import com.devefx.gameengine.buffer.OutputBuffer;
+import com.devefx.edge.buffer.OutputBuffer;
 
 public final class Color4B implements OutputBuffer {
 	

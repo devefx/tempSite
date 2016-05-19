@@ -1,6 +1,6 @@
 package com.devefx.edge.math;
 
-import com.devefx.gameengine.base.types.Vec3;
+import com.devefx.edge.base.types.Vec3;
 
 public class Mat4 {
 	

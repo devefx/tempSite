@@ -16,8 +16,8 @@ public class MatrixControl {
 	protected Stack<Mat4> projectionMatrixStack;
 	protected Stack<Mat4> textureMatrixStack;
 	
-	protected void initMatrixStack() {
-		
+	public void initMatrixStack() {
+		// TODO
 	}
 	
 	public void pushMatrix(MatrixStackType type) {
