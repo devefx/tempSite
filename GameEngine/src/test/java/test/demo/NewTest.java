@@ -21,6 +21,7 @@ public class NewTest {
 				director.setOpenGLView(openGLView);
 				
 				director.setAnimationInterval(1.0 / 60);
+
 			}
 		});
 	}
