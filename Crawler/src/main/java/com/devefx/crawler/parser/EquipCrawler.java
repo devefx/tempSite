@@ -10,7 +10,7 @@ import com.devefx.crawler.core.Crawler;
 import com.devefx.crawler.core.Resolve;
 import com.devefx.crawler.model.Equip;
 
-public class EquipCrowler extends Crawler<Equip> {
+public class EquipCrawler extends Crawler<Equip> {
 
 	/**
 	 * 武器
@@ -57,8 +57,9 @@ public class EquipCrowler extends Crawler<Equip> {
 	@Override
 	public List<Equip> parse() throws IOException {
 		List<Equip> equips = new ArrayList<Equip>();
-		
+		/*
 		resolve(qiangMao, cssQuery, equips, RESOLVE);
+		
 		resolve(fuYue, cssQuery, equips, RESOLVE);
 		resolve(jian, cssQuery, equips, RESOLVE);
 		resolve(shuangDuanjian, cssQuery, equips, RESOLVE);
@@ -66,14 +67,14 @@ public class EquipCrowler extends Crawler<Equip> {
 		resolve(zhuaCi, cssQuery, equips, RESOLVE);
 		resolve(shan, cssQuery, equips, RESOLVE);
 		resolve(moBang, cssQuery, equips, RESOLVE);
-		resolve(chui, cssQuery, equips, RESOLVE);
+		
 		resolve(bian, cssQuery, equips, RESOLVE);
 		resolve(huanQuan, cssQuery, equips, RESOLVE);
 		resolve(dao, cssQuery, equips, RESOLVE);
 		resolve(faZhang, cssQuery, equips, RESOLVE);
 		resolve(baoZhu, cssQuery, equips, RESOLVE);
 		resolve(gongNu, cssQuery, equips, RESOLVE);
-		
+		*/
 		resolve(touKui, cssQuery, equips, RESOLVE);
 		resolve(kaiJia, cssQuery, equips, RESOLVE);
 		resolve(xieZi, cssQuery, equips, RESOLVE);
